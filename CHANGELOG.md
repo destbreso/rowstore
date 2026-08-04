@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.3
+
+The skewed-column figures said "the coldest 0.04%", and 0.04% is not the coldest
+value: it is the rare value the panel's queries alternate with, two rows in five
+thousand. The rarest value that occurs at all is one row, where the estimate is
+12x too high rather than 6x. Both numbers are in the README now, with the 500
+declared values distinguished from the 422 that actually appear, which is where
+the 0.24% comes from.
+
 ## 0.1.2
 
 The paragraph under the mutation table still carried the numbers the table above
