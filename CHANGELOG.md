@@ -23,6 +23,13 @@ store reports the real one. All three now come from the run in `BENCHMARKS.md`.
 and matches exactly once. Both are stated, and the summary table in
 `BENCHMARKS.md` is computed by the benchmark rather than copied by hand.
 
+And 0.1.0 said the `1/distinct` estimate is "wrong by 5x on a skewed column",
+which was a guess in the shape of a measurement. Measured on the harness's own
+skewed field, 500 values under a Zipf distribution at the report's scale: the
+estimate says 0.24% for all of them, the hottest really selects 19.1% and the
+coldest 0.04%. That is 80x in one direction and 6x in the other, it makes the
+point far better than the number I made up for it, and it now has a test.
+
 Also: two figures drawn from the benchmark's own JSON (`npm run figures`), and
 the benchmark now writes that JSON alongside the markdown.
 

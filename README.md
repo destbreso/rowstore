@@ -160,9 +160,12 @@ store.stats();
 
 `estimatedSelectivity` is this store's own claim about itself, computed as
 `1/distinct`, which is the uniformity assumption every textbook optimizer starts
-from. On a skewed column it is wrong by 5x, and it is published for exactly that
-reason: so a harness measuring the truth can print both, and so nobody has to
-take the store's word for it.
+from. It is published so that it can be checked, and it does not survive the
+check. On the harness's skewed column, 500 values under a Zipf distribution, the
+estimate says 0.24% for every one of them, while the hottest really selects 19.1%
+of the rows and the coldest 0.04%: wrong by 80x in one direction and 6x in the
+other, on the same field, in the same query shape. There is a test that pins
+those numbers, because a caveat nothing measures is decoration.
 
 It is not used to plan anything. The driving access path is chosen from the
 posting list's **exact** size, which needs no assumption at all, and residual
