@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.2
+
+The paragraph under the mutation table still carried the numbers the table above
+it had just been corrected away from: 7,705,084 against 6,000 reads and 1,073
+against 173,938 queries per second, from a run at a different scale. On the
+workload actually shown it is 21,981,027 against 11,400, and 383 against 152,745.
+
+Same defect as the one 0.1.1 was about, one paragraph further down, which is what
+a spot fix buys you when the numbers live in prose instead of in a table the
+benchmark generates.
+
 ## 0.1.1
 
 Documentation, and the evidence behind it. No behavior changes.

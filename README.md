@@ -177,9 +177,9 @@ survived it.
 
 `insert`, `remove` and `update` all keep every index true, incrementally, at one
 read per index per mutation. There is no invalidate-and-rebuild, because the
-harness measured what that costs: a lokijs configured that way pays 7,705,084
-field reads where this store pays 6,000, and answers 1,073 queries a second where
-this one answers 173,938.
+harness measured what that costs: on the workload in the table above, a lokijs
+configured that way pays 21,981,027 field reads where this store pays 11,400, and
+answers 383 queries a second where this one answers 152,745.
 
 Change rows **through the store**. An index holds the values it read when it was
 built, so mutating a record in place behind the store's back leaves the index
