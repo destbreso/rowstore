@@ -5,8 +5,8 @@
 // incumbent fails. lokijs answers `$in` from its binary index without
 // re-verifying the candidates, and its range is computed with type-loose
 // comparators, so on a column holding both `2` and `"2"` an index changes the
-// answer: the same query returns four rows unindexed and eight indexed. It has
-// been open as issue #909 since March 2022.
+// answer: ten rows, five of each, and `$in: [2]` returns five unindexed and all
+// ten indexed. It has been open as issue #909 since March 2022.
 //
 // For a collection that builds its own indexes that failure mode is worse than
 // a wrong answer, it is a wrong answer that appears only after the workload has

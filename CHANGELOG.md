@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.1
+
+Documentation, and the evidence behind it. No behavior changes.
+
+**The benchmark had been running with three of its four rivals missing.** The
+harness came from a local path, which brought its dev dependencies with it, so
+`sift`, `mingo` and `lokijs` resolved by accident. Installed from the registry
+they did not, and the panel quietly became a table this package and
+`Array.prototype.filter`. They are dev dependencies here now, and the run reports
+what it could not load instead of printing a short table that looks complete.
+
+**Three numbers in the README did not come from the committed run.** The mutation
+table was from a smaller scale and labeled with the wrong row count; the lokijs
+`$in` defect was stated as "four rows without an index and eight with one", which
+is neither the reduction in the tests nor what the panel reproduces; and the
+`stats()` example had a hand-rounded `saved` and a selectivity of zero where the
+store reports the real one. All three now come from the run in `BENCHMARKS.md`.
+
+**The README advertised only the eager arm.** `buildAfter: 1` is 1.09x mean and
+22 of 24 exactly optimal; the default, which waits for one repeat, is 2.09x mean
+and matches exactly once. Both are stated, and the summary table in
+`BENCHMARKS.md` is computed by the benchmark rather than copied by hand.
+
+Also: two figures drawn from the benchmark's own JSON (`npm run figures`), and
+the benchmark now writes that JSON alongside the markdown.
+
 ## 0.1.0
 
 First release.

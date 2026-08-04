@@ -1,6 +1,6 @@
 {
   "name": "rowstore",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An in-memory row store that decides its own indexes by watching the queries you actually run. No index declarations, no configuration: it counts predicate shapes, builds an index the moment the arithmetic says it pays, maintains it incrementally through mutations, and tells you what it did and why.",
   "author": {
     "name": "David Estevez",
@@ -50,6 +50,7 @@
     "verify:pack": "node scripts/verify-pack.mjs",
     "smoke": "node scripts/smoke-published.mjs",
     "bench": "vite-node bench/arena.ts",
+    "figures": "node scripts/figures.mjs",
     "prepack": "npm run build && node scripts/verify-pack.mjs"
   },
   "keywords": [
@@ -66,7 +67,10 @@
   ],
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "rowtoll": "^0.1.0",
+    "lokijs": "^1.5.12",
+    "mingo": "^6.7.2",
+    "rowtoll": "^0.1.1",
+    "sift": "^17.1.3",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

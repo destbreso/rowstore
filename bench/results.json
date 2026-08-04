@@ -1,0 +1,6577 @@
+{
+ "meta": {
+  "node": "v22.14.0",
+  "platform": "darwin/arm64",
+  "scale": 0.25,
+  "trials": 5,
+  "seed": 12345,
+  "maxIndexes": 2,
+  "generatedBy": "rowstore/bench/arena.ts",
+  "missing": []
+ },
+ "results": [
+  {
+   "workload": "amortize/r=1",
+   "about": "1 equality query on one field at 0.5% selectivity",
+   "rows": 25000,
+   "queries": 1,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.0048,
+    "minSelectivity": 0.0048,
+    "maxSelectivity": 0.0048,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [],
+    "cost": {
+     "buildReads": 0,
+     "runReads": 25000,
+     "total": 25000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 25000,
+     "total": 25000
+    },
+    "evaluated": 1,
+    "pruned": 3,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 0,
+    "runReads": 25000,
+    "total": 25000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 1147.2824451702197,
+      "spread": 875.9858124345858,
+      "firstTrial": 1966.4056859417342,
+      "trials": 5,
+      "buildMs": 7.387875080108643
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 367.4781732559413,
+      "spread": 69.99031596025469,
+      "firstTrial": 389.76854593229706,
+      "trials": 5,
+      "buildMs": 7.505499839782715
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 159.62861065049844,
+      "spread": 34.27802808527372,
+      "firstTrial": 136.9167358491108,
+      "trials": 5,
+      "buildMs": 6.665250301361084
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 2131.6289669108155,
+      "spread": 391.8771367047036,
+      "firstTrial": 1978.7290252941932,
+      "trials": 5,
+      "buildMs": 9.702791213989258
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 2233.8026428752505,
+      "spread": 252.20816685765703,
+      "firstTrial": 2092.2331598412134,
+      "trials": 5,
+      "buildMs": 10.093416213989258
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 2743.79257018602,
+      "spread": 769.1320127370095,
+      "firstTrial": 2935.781460420919,
+      "trials": 5,
+      "buildMs": 10.462042331695557
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ],
+      "reported": 25000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 920.5985344360986,
+      "spread": 482.61300830516274,
+      "firstTrial": 442.13547128393833,
+      "trials": 5,
+      "buildMs": 1.2754998207092285
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ],
+      "reported": 25000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 631.2963635810844,
+      "spread": 78.14602227715193,
+      "firstTrial": 680.4646811863043,
+      "trials": 5,
+      "buildMs": 1.2035422325134277
+     }
+    }
+   ]
+  },
+  {
+   "workload": "amortize/r=2",
+   "about": "2 equality queries on one field at 0.5% selectivity",
+   "rows": 25000,
+   "queries": 2,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.004999999999999999,
+    "minSelectivity": 0.0048,
+    "maxSelectivity": 0.0052,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 25000,
+     "runReads": 0,
+     "total": 25000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 50000,
+     "total": 50000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 25000,
+    "runReads": 0,
+    "total": 25000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 50000,
+      "total": 50000,
+      "perField": [
+       [
+        "key",
+        50000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 1689.3089076594176,
+      "spread": 889.7953094251843,
+      "firstTrial": 1085.1872329757098,
+      "trials": 5,
+      "buildMs": 6.428417205810547
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 50000,
+      "total": 50000,
+      "perField": [
+       [
+        "key",
+        50000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 391.39263624893493,
+      "spread": 25.60692305269305,
+      "firstTrial": 358.33466253839924,
+      "trials": 5,
+      "buildMs": 7.344333171844482
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 50000,
+      "total": 50000,
+      "perField": [
+       [
+        "key",
+        50000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 187.0404290647965,
+      "spread": 23.307661729915083,
+      "firstTrial": 187.0404290647965,
+      "trials": 5,
+      "buildMs": 7.254833698272705
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 50000,
+      "total": 50000,
+      "perField": [
+       [
+        "key",
+        50000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 2289.2010917944585,
+      "spread": 935.0135334942154,
+      "firstTrial": 1538.0664012221498,
+      "trials": 5,
+      "buildMs": 9.297499656677246
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 568396,
+      "runReads": 333,
+      "total": 568729,
+      "perField": [
+       [
+        "key",
+        568729
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 37065.90784566712,
+      "spread": 11132.418169778317,
+      "firstTrial": 28537.533594148666,
+      "trials": 5,
+      "buildMs": 22.80983257293701
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 568396,
+      "runReads": 333,
+      "total": 568729,
+      "perField": [
+       [
+        "key",
+        568729
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 42666.666666666664,
+      "spread": 6524.383873571307,
+      "firstTrial": 8479.062640246146,
+      "trials": 5,
+      "buildMs": 22.238290786743164
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 50000,
+      "total": 50000,
+      "perField": [
+       [
+        "key",
+        50000
+       ]
+      ],
+      "reported": 50000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 549.6078856856523,
+      "spread": 239.3966390822597,
+      "firstTrial": 364.74996654092087,
+      "trials": 5,
+      "buildMs": 1.2825417518615723
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ],
+      "reported": 25000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 1247.5963054313206,
+      "spread": 250.58755945618577,
+      "firstTrial": 621.4397778269349,
+      "trials": 5,
+      "buildMs": 1.2158751487731934
+     }
+    }
+   ]
+  },
+  {
+   "workload": "amortize/r=8",
+   "about": "8 equality queries on one field at 0.5% selectivity",
+   "rows": 25000,
+   "queries": 8,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.0048400000000000006,
+    "minSelectivity": 0.0042,
+    "maxSelectivity": 0.00552,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 25000,
+     "runReads": 0,
+     "total": 25000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 200000,
+     "total": 200000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 25000,
+    "runReads": 0,
+    "total": 25000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 200000,
+      "total": 200000,
+      "perField": [
+       [
+        "key",
+        200000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 2280.7457617717837,
+      "spread": 550.6020900726421,
+      "firstTrial": 1739.461345202064,
+      "trials": 5,
+      "buildMs": 7.667208194732666
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 200000,
+      "total": 200000,
+      "perField": [
+       [
+        "key",
+        200000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 339.94875040200844,
+      "spread": 6.987951322684864,
+      "firstTrial": 340.8243642342294,
+      "trials": 5,
+      "buildMs": 7.428833961486816
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 200000,
+      "total": 200000,
+      "perField": [
+       [
+        "key",
+        200000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 225.3158800136469,
+      "spread": 10.480243222799032,
+      "firstTrial": 225.3158800136469,
+      "trials": 5,
+      "buildMs": 6.930166244506836
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 200000,
+      "total": 200000,
+      "perField": [
+       [
+        "key",
+        200000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 3069.1026726661303,
+      "spread": 434.9317833877212,
+      "firstTrial": 2659.7954978582557,
+      "trials": 5,
+      "buildMs": 9.479750156402588
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 568396,
+      "runReads": 1307,
+      "total": 569703,
+      "perField": [
+       [
+        "key",
+        569703
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 117863.87905356039,
+      "spread": 48796.69390708856,
+      "firstTrial": 117863.87905356039,
+      "trials": 5,
+      "buildMs": 22.06304168701172
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 568396,
+      "runReads": 1307,
+      "total": 569703,
+      "perField": [
+       [
+        "key",
+        569703
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 123000.11730205278,
+      "spread": 43165.81629970668,
+      "firstTrial": 105901.39058091312,
+      "trials": 5,
+      "buildMs": 22.27162504196167
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 50000,
+      "total": 50000,
+      "perField": [
+       [
+        "key",
+        50000
+       ]
+      ],
+      "reported": 50000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 2029.4267321303698,
+      "spread": 915.9259603934115,
+      "firstTrial": 3657.631602297583,
+      "trials": 5,
+      "buildMs": 1.3259577751159668
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ],
+      "reported": 25000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 4861.129429490336,
+      "spread": 1333.201160783965,
+      "firstTrial": 6129.482882460266,
+      "trials": 5,
+      "buildMs": 1.1696672439575195
+     }
+    }
+   ]
+  },
+  {
+   "workload": "amortize/r=64",
+   "about": "64 equality queries on one field at 0.5% selectivity",
+   "rows": 25000,
+   "queries": 64,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.00498,
+    "minSelectivity": 0.0042,
+    "maxSelectivity": 0.006,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 25000,
+     "runReads": 0,
+     "total": 25000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1600000,
+     "total": 1600000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 25000,
+    "runReads": 0,
+    "total": 25000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1600000,
+      "total": 1600000,
+      "perField": [
+       [
+        "key",
+        1600000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 3150.9372130974625,
+      "spread": 520.436360192507,
+      "firstTrial": 3440.960443641705,
+      "trials": 5,
+      "buildMs": 6.4487080574035645
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1600000,
+      "total": 1600000,
+      "perField": [
+       [
+        "key",
+        1600000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 382.9172065207391,
+      "spread": 1.1138352371859241,
+      "firstTrial": 383.69074498729873,
+      "trials": 5,
+      "buildMs": 7.691999912261963
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1600000,
+      "total": 1600000,
+      "perField": [
+       [
+        "key",
+        1600000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 234.32358459489967,
+      "spread": 6.075930022769285,
+      "firstTrial": 234.32358459489967,
+      "trials": 5,
+      "buildMs": 7.580999851226807
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1600000,
+      "total": 1600000,
+      "perField": [
+       [
+        "key",
+        1600000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 3656.028520447058,
+      "spread": 20.242580718196223,
+      "firstTrial": 3671.0226632459367,
+      "trials": 5,
+      "buildMs": 10.673750400543213
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 568396,
+      "runReads": 10651,
+      "total": 579047,
+      "perField": [
+       [
+        "key",
+        579047
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 181839.98298354307,
+      "spread": 37210.14487772566,
+      "firstTrial": 199351.4181489799,
+      "trials": 5,
+      "buildMs": 22.341917037963867
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 568396,
+      "runReads": 10651,
+      "total": 579047,
+      "perField": [
+       [
+        "key",
+        579047
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 166341.82820472462,
+      "spread": 46417.92197788312,
+      "firstTrial": 160033.7290326273,
+      "trials": 5,
+      "buildMs": 22.046334266662598
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 50000,
+      "total": 50000,
+      "perField": [
+       [
+        "key",
+        50000
+       ]
+      ],
+      "reported": 50000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 20743.577256605422,
+      "spread": 7703.7699019161555,
+      "firstTrial": 24605.922387551855,
+      "trials": 5,
+      "buildMs": 1.0400829315185547
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "key",
+        25000
+       ]
+      ],
+      "reported": 25000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 35030.10128939159,
+      "spread": 1525.9638995325877,
+      "firstTrial": 36572.305505721095,
+      "trials": 5,
+      "buildMs": 1.096750259399414
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-eq/s=1/N",
+   "about": "200 equality queries keeping 0.0200% of the rows",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.0002,
+    "minSelectivity": 0,
+    "maxSelectivity": 0.0008,
+    "emptyRate": 0.36
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 19120.307157278065,
+      "spread": 987.7150030735756,
+      "firstTrial": 19275.869027527522,
+      "trials": 5,
+      "buildMs": 1.4617919921875
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 1898.5081324310524,
+      "spread": 169.44552470485337,
+      "firstTrial": 1739.219287875822,
+      "trials": 5,
+      "buildMs": 1.391667366027832
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1172.869187747742,
+      "spread": 23.710468225545583,
+      "firstTrial": 1159.0493325224666,
+      "trials": 5,
+      "buildMs": 1.399207592010498
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 23142.34356793761,
+      "spread": 165.23468645085813,
+      "firstTrial": 23114.038848609718,
+      "trials": 5,
+      "buildMs": 1.9174580574035645
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 109912,
+      "runReads": 7600,
+      "total": 117512,
+      "perField": [
+       [
+        "key",
+        117512
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 738458.5047739273,
+      "spread": 55242.149088296224,
+      "firstTrial": 652705.3250607296,
+      "trials": 5,
+      "buildMs": 4.515874862670898
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 109912,
+      "runReads": 7600,
+      "total": 117512,
+      "perField": [
+       [
+        "key",
+        117512
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 703091.096836487,
+      "spread": 82957.0805989462,
+      "firstTrial": 587300.1692881357,
+      "trials": 5,
+      "buildMs": 4.640291690826416
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "key",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 356347.305541844,
+      "spread": 43031.64110123395,
+      "firstTrial": 317166.6683050659,
+      "trials": 5,
+      "buildMs": 0.22583389282226562
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 5000,
+      "total": 5000,
+      "perField": [
+       [
+        "key",
+        5000
+       ]
+      ],
+      "reported": 5000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 481251.48443963047,
+      "spread": 76776.2280988738,
+      "firstTrial": 481251.48443963047,
+      "trials": 5,
+      "buildMs": 0.19433259963989258
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-eq/s=0.001",
+   "about": "200 equality queries keeping 0.100% of the rows",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.001,
+    "minSelectivity": 0,
+    "maxSelectivity": 0.0026,
+    "emptyRate": 0.01
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 21627.46701676492,
+      "spread": 434.9634524296125,
+      "firstTrial": 18806.34629174833,
+      "trials": 5,
+      "buildMs": 1.281792163848877
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 1908.8325721645247,
+      "spread": 9.78347221623585,
+      "firstTrial": 1906.2763403503245,
+      "trials": 5,
+      "buildMs": 1.2157502174377441
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1184.4607583255465,
+      "spread": 14.584461481405242,
+      "firstTrial": 1178.750660220445,
+      "trials": 5,
+      "buildMs": 1.2821249961853027
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 27066.49731864922,
+      "spread": 889.7372760814651,
+      "firstTrial": 31602.235503977307,
+      "trials": 5,
+      "buildMs": 1.7985830307006836
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 110038,
+      "runReads": 8408,
+      "total": 118446,
+      "perField": [
+       [
+        "key",
+        118446
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 810127.2081802624,
+      "spread": 45688.01181929652,
+      "firstTrial": 733718.8839324762,
+      "trials": 5,
+      "buildMs": 4.220208168029785
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 110038,
+      "runReads": 8408,
+      "total": 118446,
+      "perField": [
+       [
+        "key",
+        118446
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 809034.9186876607,
+      "spread": 87962.49008159025,
+      "firstTrial": 700932.670888001,
+      "trials": 5,
+      "buildMs": 4.345875263214111
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "key",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 388317.97548607975,
+      "spread": 26889.659375709773,
+      "firstTrial": 371516.64174715313,
+      "trials": 5,
+      "buildMs": 0.18370771408081055
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 5000,
+      "total": 5000,
+      "perField": [
+       [
+        "key",
+        5000
+       ]
+      ],
+      "reported": 5000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 579358.9665670289,
+      "spread": 22765.50455345225,
+      "firstTrial": 549198.2600816536,
+      "trials": 5,
+      "buildMs": 0.1820831298828125
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-eq/s=0.05",
+   "about": "200 equality queries keeping 5.00% of the rows",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.0506,
+    "minSelectivity": 0.0434,
+    "maxSelectivity": 0.0558,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 13374.907125432484,
+      "spread": 915.029360999175,
+      "firstTrial": 13343.229640030275,
+      "trials": 5,
+      "buildMs": 1.2860002517700195
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 2082.1792881892493,
+      "spread": 12.34678652500088,
+      "firstTrial": 2103.02916737172,
+      "trials": 5,
+      "buildMs": 1.2704172134399414
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1184.4292001576412,
+      "spread": 7.598960389601189,
+      "firstTrial": 1195.039684280293,
+      "trials": 5,
+      "buildMs": 1.3582911491394043
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 15827.427880329318,
+      "spread": 707.5907228238884,
+      "firstTrial": 15401.152586600234,
+      "trials": 5,
+      "buildMs": 1.7544584274291992
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 81184,
+      "runReads": 57279,
+      "total": 138463,
+      "perField": [
+       [
+        "key",
+        138463
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 165574.26102939143,
+      "spread": 8643.78609386945,
+      "firstTrial": 169300.12751081056,
+      "trials": 5,
+      "buildMs": 3.174875259399414
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 81184,
+      "runReads": 57279,
+      "total": 138463,
+      "perField": [
+       [
+        "key",
+        138463
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 160133.47306772345,
+      "spread": 16403.195276896004,
+      "firstTrial": 110192.83399157877,
+      "trials": 5,
+      "buildMs": 3.268625259399414
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "key",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 87342.6114422606,
+      "spread": 4613.946520812882,
+      "firstTrial": 87342.6114422606,
+      "trials": 5,
+      "buildMs": 0.1882920265197754
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 5000,
+      "total": 5000,
+      "perField": [
+       [
+        "key",
+        5000
+       ]
+      ],
+      "reported": 5000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 101880.54849250063,
+      "spread": 4969.530776770669,
+      "firstTrial": 113526.11344426364,
+      "trials": 5,
+      "buildMs": 0.19366693496704102
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-eq/s=0.25",
+   "about": "200 equality queries keeping 25.0% of the rows",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.2494,
+    "minSelectivity": 0.2418,
+    "maxSelectivity": 0.2552,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 15760.336992755618,
+      "spread": 788.5726339930679,
+      "firstTrial": 14670.779083979436,
+      "trials": 5,
+      "buildMs": 1.3837919235229492
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 2144.692585560947,
+      "spread": 21.338021106963424,
+      "firstTrial": 2125.806091059395,
+      "trials": 5,
+      "buildMs": 1.287959098815918
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1202.7244718576292,
+      "spread": 9.591150744451397,
+      "firstTrial": 1211.1516819763067,
+      "trials": 5,
+      "buildMs": 1.2864999771118164
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 17347.495484870164,
+      "spread": 1493.8747478249716,
+      "firstTrial": 17347.495484870164,
+      "trials": 5,
+      "buildMs": 2.1587910652160645
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 55516,
+      "runReads": 256731,
+      "total": 312247,
+      "perField": [
+       [
+        "key",
+        312247
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 39541.31999421158,
+      "spread": 1147.836382358153,
+      "firstTrial": 40685.89862418102,
+      "trials": 5,
+      "buildMs": 2.673333168029785
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 55516,
+      "runReads": 256731,
+      "total": 312247,
+      "perField": [
+       [
+        "key",
+        312247
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 40596.428063629755,
+      "spread": 672.4533380909852,
+      "firstTrial": 41390.37093307897,
+      "trials": 5,
+      "buildMs": 2.6579999923706055
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "key",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 27340.30271486998,
+      "spread": 1237.5257861078244,
+      "firstTrial": 27340.30271486998,
+      "trials": 5,
+      "buildMs": 0.21229171752929688
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 5000,
+      "total": 5000,
+      "perField": [
+       [
+        "key",
+        5000
+       ]
+      ],
+      "reported": 5000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 27966.810855777065,
+      "spread": 97.08753013189198,
+      "firstTrial": 27966.810855777065,
+      "trials": 5,
+      "buildMs": 0.20954227447509766
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-eq/s=0.5",
+   "about": "200 equality queries keeping 50.0% of the rows",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.4928,
+    "minSelectivity": 0.4928,
+    "maxSelectivity": 0.5072,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 12039.851719046512,
+      "spread": 1064.1310316729105,
+      "firstTrial": 13090.041001565854,
+      "trials": 5,
+      "buildMs": 1.368666648864746
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 2143.416925576821,
+      "spread": 68.63155003774546,
+      "firstTrial": 2170.1732292574234,
+      "trials": 5,
+      "buildMs": 1.3477497100830078
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1187.6079067378002,
+      "spread": 432.32656076791284,
+      "firstTrial": 1233.2746746041848,
+      "trials": 5,
+      "buildMs": 1.2991251945495605
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 12281.711619724394,
+      "spread": 878.9909086150528,
+      "firstTrial": 12158.393895757532,
+      "trials": 5,
+      "buildMs": 1.9940829277038574
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 47644,
+      "runReads": 506548,
+      "total": 554192,
+      "perField": [
+       [
+        "key",
+        554192
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 20884.72933032198,
+      "spread": 1264.3804144352289,
+      "firstTrial": 21568.1888467121,
+      "trials": 5,
+      "buildMs": 2.795207977294922
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 47644,
+      "runReads": 506548,
+      "total": 554192,
+      "perField": [
+       [
+        "key",
+        554192
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 21384.27717969475,
+      "spread": 2611.842231394934,
+      "firstTrial": 21752.430064056625,
+      "trials": 5,
+      "buildMs": 2.7768750190734863
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "key",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 14193.121491251237,
+      "spread": 474.77078599385095,
+      "firstTrial": 14743.734226507804,
+      "trials": 5,
+      "buildMs": 0.23270893096923828
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 5000,
+      "total": 5000,
+      "perField": [
+       [
+        "key",
+        5000
+       ]
+      ],
+      "reported": 5000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 13161.466371031056,
+      "spread": 2225.133457350559,
+      "firstTrial": 14841.33641749383,
+      "trials": 5,
+      "buildMs": 0.22224998474121094
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-eq/s=1",
+   "about": "200 equality queries keeping 100% of the rows",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 1,
+    "minSelectivity": 1,
+    "maxSelectivity": 1,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 14559.3520481847,
+      "spread": 223.67536622627813,
+      "firstTrial": 14349.689379454103,
+      "trials": 5,
+      "buildMs": 1.3046250343322754
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 2338.0589545939274,
+      "spread": 18.308599717757716,
+      "firstTrial": 2298.998139738842,
+      "trials": 5,
+      "buildMs": 1.3012919425964355
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1361.1862216281597,
+      "spread": 10.793275837150759,
+      "firstTrial": 1367.2860911506828,
+      "trials": 5,
+      "buildMs": 1.302417278289795
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 13277.530383603229,
+      "spread": 329.170872257464,
+      "firstTrial": 13277.530383603229,
+      "trials": 5,
+      "buildMs": 1.8919172286987305
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 9998,
+      "runReads": 1007000,
+      "total": 1016998,
+      "perField": [
+       [
+        "key",
+        1016998
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 11308.406422385766,
+      "spread": 468.71640098005264,
+      "firstTrial": 11511.89586139738,
+      "trials": 5,
+      "buildMs": 1.859208583831787
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 9998,
+      "runReads": 1007000,
+      "total": 1016998,
+      "perField": [
+       [
+        "key",
+        1016998
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 11278.672683028646,
+      "spread": 295.87655931770496,
+      "firstTrial": 11501.08277560735,
+      "trials": 5,
+      "buildMs": 1.9591670036315918
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "key",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 6396.613999385792,
+      "spread": 136.09340665548189,
+      "firstTrial": 6507.574669743965,
+      "trials": 5,
+      "buildMs": 0.23662471771240234
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 5000,
+      "total": 5000,
+      "perField": [
+       [
+        "key",
+        5000
+       ]
+      ],
+      "reported": 5000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 6635.681619024402,
+      "spread": 327.83572436788654,
+      "firstTrial": 6745.410056227136,
+      "trials": 5,
+      "buildMs": 0.1847090721130371
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-rng/keep=5%",
+   "about": "200 range queries whose range spans 5% of the value space, halved again by a residual equality: see the measured selectivity below, which is the number that matters",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.025,
+    "minSelectivity": 0.0196,
+    "maxSelectivity": 0.0292,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     }
+    ],
+    "cost": {
+     "buildReads": 10000,
+     "runReads": 0,
+     "total": 10000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1435306,
+     "total": 1435306
+    },
+    "evaluated": 5,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     },
+     {
+      "field": "active",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 10000,
+    "runReads": 0,
+    "total": 10000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1563727,
+      "total": 1563727,
+      "perField": [
+       [
+        "score",
+        1513685
+       ],
+       [
+        "active",
+        50042
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 13374.0870112941,
+      "spread": 147.70192486905398,
+      "firstTrial": 13374.0870112941,
+      "trials": 5,
+      "buildMs": 1.2592501640319824
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 3000000,
+      "total": 3000000,
+      "perField": [
+       [
+        "score",
+        2000000
+       ],
+       [
+        "active",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 892.129299864557,
+      "spread": 13.124895680120062,
+      "firstTrial": 882.0098620060791,
+      "trials": 5,
+      "buildMs": 1.2425408363342285
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1563727,
+      "total": 1563727,
+      "perField": [
+       [
+        "score",
+        1513685
+       ],
+       [
+        "active",
+        50042
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 631.1852042949362,
+      "spread": 10.735896410281839,
+      "firstTrial": 620.7634503732767,
+      "trials": 5,
+      "buildMs": 1.3079590797424316
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1563727,
+      "total": 1563727,
+      "perField": [
+       [
+        "score",
+        1513685
+       ],
+       [
+        "active",
+        50042
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 9332.184627784181,
+      "spread": 133.39822250142788,
+      "firstTrial": 9175.381352859393,
+      "trials": 5,
+      "buildMs": 1.945915699005127
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 157564,
+      "runReads": 567719,
+      "total": 725283,
+      "perField": [
+       [
+        "score",
+        627525
+       ],
+       [
+        "active",
+        97758
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 17235.3112700082,
+      "spread": 545.82388645026,
+      "firstTrial": 17846.4541784865,
+      "trials": 5,
+      "buildMs": 3.8524999618530273
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 157564,
+      "runReads": 567719,
+      "total": 725283,
+      "perField": [
+       [
+        "score",
+        627525
+       ],
+       [
+        "active",
+        97758
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 17558.363722645852,
+      "spread": 541.2948557454074,
+      "firstTrial": 17063.69287937002,
+      "trials": 5,
+      "buildMs": 3.814333915710449
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 19687,
+      "total": 19687,
+      "perField": [
+       [
+        "score",
+        14429
+       ],
+       [
+        "active",
+        5258
+       ]
+      ],
+      "reported": 19687
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 5871.1214825184215,
+      "spread": 25.436636032661227,
+      "firstTrial": 5811.27878035392,
+      "trials": 5,
+      "buildMs": 0.2201671600341797
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "score",
+        5000
+       ],
+       [
+        "active",
+        5000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 6038.859939544652,
+      "spread": 197.71255614047095,
+      "firstTrial": 6216.038421995913,
+      "trials": 5,
+      "buildMs": 0.18916702270507812
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-rng/keep=20%",
+   "about": "200 range queries whose range spans 20% of the value space, halved again by a residual equality: see the measured selectivity below, which is the number that matters",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.09809999999999999,
+    "minSelectivity": 0.0916,
+    "maxSelectivity": 0.1042,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     }
+    ],
+    "cost": {
+     "buildReads": 10000,
+     "runReads": 0,
+     "total": 10000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1594112,
+     "total": 1594112
+    },
+    "evaluated": 5,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     },
+     {
+      "field": "active",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 10000,
+    "runReads": 0,
+    "total": 10000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1802568,
+      "total": 1802568,
+      "perField": [
+       [
+        "score",
+        1603688
+       ],
+       [
+        "active",
+        198880
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 10385.294478640168,
+      "spread": 252.16623343497304,
+      "firstTrial": 10602.369364275279,
+      "trials": 5,
+      "buildMs": 1.257166862487793
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 3000000,
+      "total": 3000000,
+      "perField": [
+       [
+        "score",
+        2000000
+       ],
+       [
+        "active",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 904.1136610698076,
+      "spread": 10.425007901478011,
+      "firstTrial": 898.0014456604104,
+      "trials": 5,
+      "buildMs": 1.2714166641235352
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1802568,
+      "total": 1802568,
+      "perField": [
+       [
+        "score",
+        1603688
+       ],
+       [
+        "active",
+        198880
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 571.2094030715446,
+      "spread": 4.76847250927176,
+      "firstTrial": 571.8533763887629,
+      "trials": 5,
+      "buildMs": 1.3266658782958984
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1802568,
+      "total": 1802568,
+      "perField": [
+       [
+        "score",
+        1603688
+       ],
+       [
+        "active",
+        198880
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 7344.840244579812,
+      "spread": 380.49914761352284,
+      "firstTrial": 7189.320371874496,
+      "trials": 5,
+      "buildMs": 1.9390411376953125
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 157564,
+      "runReads": 806550,
+      "total": 964114,
+      "perField": [
+       [
+        "score",
+        717518
+       ],
+       [
+        "active",
+        246596
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 12006.333296845582,
+      "spread": 218.43183601292367,
+      "firstTrial": 11214.79574080416,
+      "trials": 5,
+      "buildMs": 3.8047499656677246
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 157564,
+      "runReads": 806550,
+      "total": 964114,
+      "perField": [
+       [
+        "score",
+        717518
+       ],
+       [
+        "active",
+        246596
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 11911.85232009536,
+      "spread": 508.65749213076197,
+      "firstTrial": 12254.276685310575,
+      "trials": 5,
+      "buildMs": 3.675084114074707
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 17092,
+      "total": 17092,
+      "perField": [
+       [
+        "score",
+        11087
+       ],
+       [
+        "active",
+        6005
+       ]
+      ],
+      "reported": 17092
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 4379.474167689523,
+      "spread": 1267.4396345274085,
+      "firstTrial": 4394.799407455492,
+      "trials": 5,
+      "buildMs": 0.25454187393188477
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "score",
+        5000
+       ],
+       [
+        "active",
+        5000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 4431.024154251006,
+      "spread": 481.34801438115664,
+      "firstTrial": 4685.235117190528,
+      "trials": 5,
+      "buildMs": 0.2514171600341797
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-rng/keep=45%",
+   "about": "200 range queries whose range spans 45% of the value space, halved again by a residual equality: see the measured selectivity below, which is the number that matters",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.2217,
+    "minSelectivity": 0.2144,
+    "maxSelectivity": 0.226,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     }
+    ],
+    "cost": {
+     "buildReads": 10000,
+     "runReads": 0,
+     "total": 10000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1788464,
+     "total": 1788464
+    },
+    "evaluated": 5,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     },
+     {
+      "field": "active",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 10000,
+    "runReads": 0,
+    "total": 10000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 2169848,
+      "total": 2169848,
+      "perField": [
+       [
+        "score",
+        1723087
+       ],
+       [
+        "active",
+        446761
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 8760.994784181205,
+      "spread": 1060.9877481989097,
+      "firstTrial": 9588.014981273409,
+      "trials": 5,
+      "buildMs": 1.3049168586730957
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 3000000,
+      "total": 3000000,
+      "perField": [
+       [
+        "score",
+        2000000
+       ],
+       [
+        "active",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 909.2271197060235,
+      "spread": 9.05425247942776,
+      "firstTrial": 909.2271197060235,
+      "trials": 5,
+      "buildMs": 1.291874885559082
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 2169848,
+      "total": 2169848,
+      "perField": [
+       [
+        "score",
+        1723087
+       ],
+       [
+        "active",
+        446761
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 478.50500698774306,
+      "spread": 5.967999618062777,
+      "firstTrial": 473.7361196482787,
+      "trials": 5,
+      "buildMs": 1.3215832710266113
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 2169848,
+      "total": 2169848,
+      "perField": [
+       [
+        "score",
+        1723087
+       ],
+       [
+        "active",
+        446761
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 6064.618526127473,
+      "spread": 302.90071951708796,
+      "firstTrial": 5695.328345624724,
+      "trials": 5,
+      "buildMs": 1.882291316986084
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 157564,
+      "runReads": 1173847,
+      "total": 1331411,
+      "perField": [
+       [
+        "score",
+        836934
+       ],
+       [
+        "active",
+        494477
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 8319.669224088588,
+      "spread": 159.15976309844336,
+      "firstTrial": 8190.162172398463,
+      "trials": 5,
+      "buildMs": 3.87404203414917
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 157564,
+      "runReads": 1173847,
+      "total": 1331411,
+      "perField": [
+       [
+        "score",
+        836934
+       ],
+       [
+        "active",
+        494477
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 8009.023533250983,
+      "spread": 296.71366358028354,
+      "firstTrial": 7935.0517119200795,
+      "trials": 5,
+      "buildMs": 3.928542137145996
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 21756,
+      "total": 21756,
+      "perField": [
+       [
+        "score",
+        14550
+       ],
+       [
+        "active",
+        7206
+       ]
+      ],
+      "reported": 21756
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 3038.2342836194034,
+      "spread": 207.1989482628851,
+      "firstTrial": 3038.2342836194034,
+      "trials": 5,
+      "buildMs": 0.22962474822998047
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "score",
+        5000
+       ],
+       [
+        "active",
+        5000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 3228.310151002614,
+      "spread": 97.55238782976221,
+      "firstTrial": 3192.9563342341453,
+      "trials": 5,
+      "buildMs": 0.2984166145324707
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-rng/keep=60%",
+   "about": "200 range queries whose range spans 60% of the value space, halved again by a residual equality: see the measured selectivity below, which is the number that matters",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.2937,
+    "minSelectivity": 0.2876,
+    "maxSelectivity": 0.2984,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     }
+    ],
+    "cost": {
+     "buildReads": 10000,
+     "runReads": 0,
+     "total": 10000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1842698,
+     "total": 1842698
+    },
+    "evaluated": 5,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     },
+     {
+      "field": "active",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 10000,
+    "runReads": 0,
+    "total": 10000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 2393045,
+      "total": 2393045,
+      "perField": [
+       [
+        "score",
+        1797851
+       ],
+       [
+        "active",
+        595194
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 9014.693810090244,
+      "spread": 709.557032935787,
+      "firstTrial": 9231.035432084036,
+      "trials": 5,
+      "buildMs": 1.235708236694336
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 3000000,
+      "total": 3000000,
+      "perField": [
+       [
+        "score",
+        2000000
+       ],
+       [
+        "active",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 911.7919191043799,
+      "spread": 2.8756534047686273,
+      "firstTrial": 911.7919191043799,
+      "trials": 5,
+      "buildMs": 1.270249843597412
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 2393045,
+      "total": 2393045,
+      "perField": [
+       [
+        "score",
+        1797851
+       ],
+       [
+        "active",
+        595194
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 440.0894735052739,
+      "spread": 7.464039801414344,
+      "firstTrial": 428.6678023387023,
+      "trials": 5,
+      "buildMs": 1.2966670989990234
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 2393045,
+      "total": 2393045,
+      "perField": [
+       [
+        "score",
+        1797851
+       ],
+       [
+        "active",
+        595194
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 5658.215509828029,
+      "spread": 131.4632343857802,
+      "firstTrial": 5658.215509828029,
+      "trials": 5,
+      "buildMs": 1.8590826988220215
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 157564,
+      "runReads": 1397043,
+      "total": 1554607,
+      "perField": [
+       [
+        "score",
+        911697
+       ],
+       [
+        "active",
+        642910
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 6806.377038395846,
+      "spread": 123.56876137210111,
+      "firstTrial": 6689.373588599021,
+      "trials": 5,
+      "buildMs": 3.795083999633789
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 157564,
+      "runReads": 1397043,
+      "total": 1554607,
+      "perField": [
+       [
+        "score",
+        911697
+       ],
+       [
+        "active",
+        642910
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 6898.6926559775275,
+      "spread": 96.65391254562837,
+      "firstTrial": 6805.2093233047335,
+      "trials": 5,
+      "buildMs": 3.74466609954834
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 21826,
+      "total": 21826,
+      "perField": [
+       [
+        "score",
+        13836
+       ],
+       [
+        "active",
+        7990
+       ]
+      ],
+      "reported": 21826
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 2812.0595140723153,
+      "spread": 31.368078398961188,
+      "firstTrial": 2812.0595140723153,
+      "trials": 5,
+      "buildMs": 0.22891664505004883
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "score",
+        5000
+       ],
+       [
+        "active",
+        5000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 2863.138394931867,
+      "spread": 116.74989684940601,
+      "firstTrial": 3012.422461958749,
+      "trials": 5,
+      "buildMs": 0.18400001525878906
+     }
+    }
+   ]
+  },
+  {
+   "workload": "select-rng/keep=100%",
+   "about": "200 range queries whose range spans 100% of the value space, halved again by a residual equality: see the measured selectivity below, which is the number that matters",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.4954,
+    "minSelectivity": 0.4954,
+    "maxSelectivity": 0.4954,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     }
+    ],
+    "cost": {
+     "buildReads": 10000,
+     "runReads": 0,
+     "total": 10000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1990800,
+     "total": 1990800
+    },
+    "evaluated": 5,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     },
+     {
+      "field": "active",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 10000,
+    "runReads": 0,
+    "total": 10000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 3000000,
+      "total": 3000000,
+      "perField": [
+       [
+        "score",
+        2000000
+       ],
+       [
+        "active",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 8362.9521354389,
+      "spread": 92.85877250632075,
+      "firstTrial": 8509.084209138457,
+      "trials": 5,
+      "buildMs": 1.261958122253418
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 3000000,
+      "total": 3000000,
+      "perField": [
+       [
+        "score",
+        2000000
+       ],
+       [
+        "active",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 906.576188419029,
+      "spread": 10.678650456231935,
+      "firstTrial": 924.5086679090819,
+      "trials": 5,
+      "buildMs": 1.3385000228881836
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 3000000,
+      "total": 3000000,
+      "perField": [
+       [
+        "score",
+        2000000
+       ],
+       [
+        "active",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 362.0582562443677,
+      "spread": 3.8743169065287475,
+      "firstTrial": 357.93283927093876,
+      "trials": 5,
+      "buildMs": 1.3084173202514648
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 3000000,
+      "total": 3000000,
+      "perField": [
+       [
+        "score",
+        2000000
+       ],
+       [
+        "active",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 4748.15952532895,
+      "spread": 81.34911107906282,
+      "firstTrial": 4638.904749251583,
+      "trials": 5,
+      "buildMs": 1.8595423698425293
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 157564,
+      "runReads": 2000400,
+      "total": 2157964,
+      "perField": [
+       [
+        "score",
+        1110248
+       ],
+       [
+        "active",
+        1047716
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 4831.112394041567,
+      "spread": 76.86552612649848,
+      "firstTrial": 4831.112394041567,
+      "trials": 5,
+      "buildMs": 3.7382922172546387
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 157564,
+      "runReads": 2000400,
+      "total": 2157964,
+      "perField": [
+       [
+        "score",
+        1110248
+       ],
+       [
+        "active",
+        1047716
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 4855.085900490014,
+      "spread": 7.342736667873396,
+      "firstTrial": 4855.085900490014,
+      "trials": 5,
+      "buildMs": 3.8859171867370605
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 25000,
+      "total": 25000,
+      "perField": [
+       [
+        "score",
+        15000
+       ],
+       [
+        "active",
+        10000
+       ]
+      ],
+      "reported": 25000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 2752.2572828888706,
+      "spread": 11.846161677723558,
+      "firstTrial": 2758.839500989864,
+      "trials": 5,
+      "buildMs": 0.2083749771118164
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "score",
+        5000
+       ],
+       [
+        "active",
+        5000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 2918.5026160767848,
+      "spread": 122.50386707424104,
+      "firstTrial": 3024.9806635960167,
+      "trials": 5,
+      "buildMs": 0.18154096603393555
+     }
+    }
+   ]
+  },
+  {
+   "workload": "churn/m=0",
+   "about": "200 equality queries with 0 insert-and-remove pairs between each",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.001,
+    "minSelectivity": 0,
+    "maxSelectivity": 0.0028,
+    "emptyRate": 0.005
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 13802.345195327036,
+      "spread": 988.1462863921697,
+      "firstTrial": 13643.341095985723,
+      "trials": 5,
+      "buildMs": 1.2492499351501465
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 2045.5641007183438,
+      "spread": 10.808441916966103,
+      "firstTrial": 2036.1423836509678,
+      "trials": 5,
+      "buildMs": 1.2558751106262207
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1157.8552273841037,
+      "spread": 16.660003092395527,
+      "firstTrial": 1148.1663158397735,
+      "trials": 5,
+      "buildMs": 1.2863330841064453
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 17182.19272229981,
+      "spread": 375.607011936092,
+      "firstTrial": 15951.772395279395,
+      "trials": 5,
+      "buildMs": 1.7346253395080566
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 109936,
+      "runReads": 8347,
+      "total": 118283,
+      "perField": [
+       [
+        "key",
+        118283
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 574712.561779863,
+      "spread": 5543.2531412261305,
+      "firstTrial": 574712.561779863,
+      "trials": 5,
+      "buildMs": 4.461291313171387
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 109936,
+      "runReads": 8347,
+      "total": 118283,
+      "perField": [
+       [
+        "key",
+        118283
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 600826.5421744218,
+      "spread": 23527.043594166404,
+      "firstTrial": 580410.0215181728,
+      "trials": 5,
+      "buildMs": 4.447500228881836
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "key",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 361445.81635677995,
+      "spread": 28806.3160566063,
+      "firstTrial": 362510.45793662313,
+      "trials": 5,
+      "buildMs": 0.1978750228881836
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 5000,
+      "total": 5000,
+      "perField": [
+       [
+        "key",
+        5000
+       ]
+      ],
+      "reported": 5000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 518806.8060936209,
+      "spread": 60584.92734190711,
+      "firstTrial": 530211.1209853071,
+      "trials": 5,
+      "buildMs": 0.18720769882202148
+     }
+    }
+   ]
+  },
+  {
+   "workload": "churn/m=1",
+   "about": "200 equality queries with 1 insert-and-remove pairs between each",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 400,
+   "truth": {
+    "medianSelectivity": 0.001,
+    "minSelectivity": 0,
+    "maxSelectivity": 0.0024,
+    "emptyRate": 0.01
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 400,
+     "total": 5400
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 3,
+    "pruned": 1,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 400,
+    "total": 5400
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 18707.469127107815,
+      "spread": 197.51576078896687,
+      "firstTrial": 18619.30006716046,
+      "trials": 5,
+      "buildMs": 1.2975831031799316
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 2036.373025934307,
+      "spread": 37.06411698693955,
+      "firstTrial": 2039.209761293959,
+      "trials": 5,
+      "buildMs": 1.2457079887390137
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1144.7795562343238,
+      "spread": 11.785862565800471,
+      "firstTrial": 1144.7795562343238,
+      "trials": 5,
+      "buildMs": 1.5889997482299805
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 16302.798055466697,
+      "spread": 551.9031587623431,
+      "firstTrial": 15232.63088417597,
+      "trials": 5,
+      "buildMs": 1.7958331108093262
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 109936,
+      "runReads": 21888952,
+      "total": 21998888,
+      "perField": [
+       [
+        "key",
+        21998888
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 387.8391730804389,
+      "spread": 4.419538738011397,
+      "firstTrial": 387.8391730804389,
+      "trials": 5,
+      "buildMs": 4.984957695007324
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 109936,
+      "runReads": 19173,
+      "total": 129109,
+      "perField": [
+       [
+        "key",
+        129109
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 88497.20939614422,
+      "spread": 4490.00780237031,
+      "firstTrial": 88497.20939614422,
+      "trials": 5,
+      "buildMs": 4.491167068481445
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10398,
+      "total": 10398,
+      "perField": [
+       [
+        "key",
+        10398
+       ]
+      ],
+      "reported": 10398
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 259838.74315061068,
+      "spread": 128962.28123892337,
+      "firstTrial": 318597.9667114322,
+      "trials": 5,
+      "buildMs": 0.2207503318786621
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 5400,
+      "total": 5400,
+      "perField": [
+       [
+        "key",
+        5400
+       ]
+      ],
+      "reported": 5400
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 370541.84946525336,
+      "spread": 52940.85057229118,
+      "firstTrial": 405234.62582280143,
+      "trials": 5,
+      "buildMs": 0.21662521362304688
+     }
+    }
+   ]
+  },
+  {
+   "workload": "churn/m=4",
+   "about": "200 equality queries with 4 insert-and-remove pairs between each",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 1600,
+   "truth": {
+    "medianSelectivity": 0.0008,
+    "minSelectivity": 0,
+    "maxSelectivity": 0.0024,
+    "emptyRate": 0.005
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 1600,
+     "total": 6600
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 3,
+    "pruned": 1,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 1600,
+    "total": 6600
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 18571.96953461327,
+      "spread": 977.7597720742597,
+      "firstTrial": 18037.111871657664,
+      "trials": 5,
+      "buildMs": 1.3378748893737793
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 2038.6260133573596,
+      "spread": 11.150805323364239,
+      "firstTrial": 2027.7617397940307,
+      "trials": 5,
+      "buildMs": 1.3004159927368164
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1158.1997032556183,
+      "spread": 11.6493129631167,
+      "firstTrial": 1158.1997032556183,
+      "trials": 5,
+      "buildMs": 1.2791671752929688
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 15337.324649199669,
+      "spread": 639.143599805453,
+      "firstTrial": 15940.434980432767,
+      "trials": 5,
+      "buildMs": 1.9004168510437012
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 109936,
+      "runReads": 21883541,
+      "total": 21993477,
+      "perField": [
+       [
+        "key",
+        21993477
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 389.3313787653736,
+      "spread": 8.847977062792097,
+      "firstTrial": 380.2486491077425,
+      "trials": 5,
+      "buildMs": 4.507208347320557
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "buildReads": 109936,
+      "runReads": 51545,
+      "total": 161481,
+      "perField": [
+       [
+        "key",
+        161481
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 27021.395670537844,
+      "spread": 380.7316013236268,
+      "firstTrial": 27030.224547916172,
+      "trials": 5,
+      "buildMs": 4.730167388916016
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 11592,
+      "total": 11592,
+      "perField": [
+       [
+        "key",
+        11592
+       ]
+      ],
+      "reported": 11592
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 252246.47878853488,
+      "spread": 25641.992922367674,
+      "firstTrial": 253097.9624495983,
+      "trials": 5,
+      "buildMs": 0.22258424758911133
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 6600,
+      "total": 6600,
+      "perField": [
+       [
+        "key",
+        6600
+       ]
+      ],
+      "reported": 6600
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 334471.6026758979,
+      "spread": 40813.725700848154,
+      "firstTrial": 298025.7403384912,
+      "trials": 5,
+      "buildMs": 0.19187498092651367
+     }
+    }
+   ]
+  },
+  {
+   "workload": "churn/m=16",
+   "about": "200 equality queries with 16 insert-and-remove pairs between each",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 6400,
+   "truth": {
+    "medianSelectivity": 0.001,
+    "minSelectivity": 0,
+    "maxSelectivity": 0.0034,
+    "emptyRate": 0.015
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 6400,
+     "total": 11400
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 4,
+    "pruned": 0,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 6400,
+    "total": 11400
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 18688.89566167441,
+      "spread": 455.50550763415595,
+      "firstTrial": 16046.534484789589,
+      "trials": 5,
+      "buildMs": 1.355374813079834
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 2012.332255788483,
+      "spread": 14.919285911158795,
+      "firstTrial": 2002.2650592931113,
+      "trials": 5,
+      "buildMs": 1.2373342514038086
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1160.047948049638,
+      "spread": 6.926057272605249,
+      "firstTrial": 1160.047948049638,
+      "trials": 5,
+      "buildMs": 1.2672500610351562
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 12508.827344259165,
+      "spread": 198.97159633833144,
+      "firstTrial": 12432.10890283446,
+      "trials": 5,
+      "buildMs": 1.7609167098999023
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 109936,
+      "runReads": 21871091,
+      "total": 21981027,
+      "perField": [
+       [
+        "key",
+        21981027
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 382.6957422415255,
+      "spread": 1.6216474931641187,
+      "firstTrial": 381.5565733254379,
+      "trials": 5,
+      "buildMs": 4.592667102813721
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "buildReads": 109936,
+      "runReads": 181452,
+      "total": 291388,
+      "perField": [
+       [
+        "key",
+        291388
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 7029.403283954824,
+      "spread": 47.03140003574299,
+      "firstTrial": 6988.059215394128,
+      "trials": 5,
+      "buildMs": 5.12862491607666
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 16368,
+      "total": 16368,
+      "perField": [
+       [
+        "key",
+        16368
+       ]
+      ],
+      "reported": 16368
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 139235.36972709987,
+      "spread": 10116.915067406138,
+      "firstTrial": 144521.73457616233,
+      "trials": 5,
+      "buildMs": 0.21666717529296875
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 11400,
+      "total": 11400,
+      "perField": [
+       [
+        "key",
+        11400
+       ]
+      ],
+      "reported": 11400
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 152744.59669645468,
+      "spread": 41652.538539766494,
+      "firstTrial": 152744.59669645468,
+      "trials": 5,
+      "buildMs": 0.19041728973388672
+     }
+    }
+   ]
+  },
+  {
+   "workload": "hash-trap",
+   "about": "20 equality queries then 200 range queries on one field: the case where the wrong index kind costs exactly 2.00x",
+   "rows": 5000,
+   "queries": 220,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.0494,
+    "minSelectivity": 0,
+    "maxSelectivity": 0.0534,
+    "emptyRate": 0.05
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "score",
+      "kind": "sorted"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1387743,
+     "total": 1387743
+    },
+    "evaluated": 3,
+    "pruned": 1,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "score",
+      "kind": "hash"
+     },
+     {
+      "field": "score",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "buildReads": 0,
+      "runReads": 1645483,
+      "total": 1645483,
+      "perField": [
+       [
+        "score",
+        1645483
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 14955.600961596123,
+      "spread": 929.6165156788211,
+      "firstTrial": 14465.594984670728,
+      "trials": 5,
+      "buildMs": 1.6133332252502441
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "buildReads": 0,
+      "runReads": 2100000,
+      "total": 2100000,
+      "perField": [
+       [
+        "score",
+        2100000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 1381.9475267440737,
+      "spread": 11.896651936183389,
+      "firstTrial": 1382.3929260361988,
+      "trials": 5,
+      "buildMs": 1.2853751182556152
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "buildReads": 0,
+      "runReads": 1645483,
+      "total": 1645483,
+      "perField": [
+       [
+        "score",
+        1645483
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 679.9408808213633,
+      "spread": 5.71304394429626,
+      "firstTrial": 679.9408808213633,
+      "trials": 5,
+      "buildMs": 1.2932500839233398
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "buildReads": 0,
+      "runReads": 1645483,
+      "total": 1645483,
+      "perField": [
+       [
+        "score",
+        1645483
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 9877.226964960393,
+      "spread": 739.2557346260928,
+      "firstTrial": 9491.538004246668,
+      "trials": 5,
+      "buildMs": 2.006457805633545
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "buildReads": 109848,
+      "runReads": 550213,
+      "total": 660061,
+      "perField": [
+       [
+        "score",
+        660061
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 19173.36671868791,
+      "spread": 748.3861098700108,
+      "firstTrial": 19529.227929707326,
+      "trials": 5,
+      "buildMs": 3.2835841178894043
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "buildReads": 109848,
+      "runReads": 550213,
+      "total": 660061,
+      "perField": [
+       [
+        "score",
+        660061
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 19454.320026891855,
+      "spread": 258.29507674985507,
+      "firstTrial": 19454.320026891855,
+      "trials": 5,
+      "buildMs": 3.555917263031006
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "buildReads": 0,
+      "runReads": 20643,
+      "total": 20643,
+      "perField": [
+       [
+        "score",
+        20643
+       ]
+      ],
+      "reported": 20643
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 7214.33670988106,
+      "spread": 235.15787112025464,
+      "firstTrial": 7214.33670988106,
+      "trials": 5,
+      "buildMs": 0.2579159736633301
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "score",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 7494.54940756676,
+      "spread": 459.82135892548376,
+      "firstTrial": 8013.842129859333,
+      "trials": 5,
+      "buildMs": 0.21091699600219727
+     }
+    }
+   ]
+  },
+  {
+   "workload": "skew",
+   "about": "400 queries alternating the hottest and the coldest value of a Zipf field",
+   "rows": 5000,
+   "queries": 400,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.0956,
+    "minSelectivity": 0.0004,
+    "maxSelectivity": 0.1908,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "topic",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 2000000,
+     "total": 2000000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "topic",
+      "kind": "hash"
+     },
+     {
+      "field": "topic",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 2000000,
+      "total": 2000000,
+      "perField": [
+       [
+        "topic",
+        2000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 13841.269112123513,
+      "spread": 536.2164926947225,
+      "firstTrial": 3079.616747079845,
+      "trials": 5,
+      "buildMs": 1.3391661643981934
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 2000000,
+      "total": 2000000,
+      "perField": [
+       [
+        "topic",
+        2000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 1948.5972222580983,
+      "spread": 277.4244270680947,
+      "firstTrial": 844.6110156819175,
+      "trials": 5,
+      "buildMs": 1.3014159202575684
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 2000000,
+      "total": 2000000,
+      "perField": [
+       [
+        "topic",
+        2000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 1129.2637649362243,
+      "spread": 25.066154252649994,
+      "firstTrial": 1141.2068747337973,
+      "trials": 5,
+      "buildMs": 1.453125
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "snapshot": false,
+      "buildReads": 0,
+      "runReads": 2000000,
+      "total": 2000000,
+      "perField": [
+       [
+        "topic",
+        2000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 13199.468616706417,
+      "spread": 829.9917637848939,
+      "firstTrial": 12856.86143936416,
+      "trials": 5,
+      "buildMs": 2.100749969482422
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "snapshot": false,
+      "buildReads": 93982,
+      "runReads": 206000,
+      "total": 299982,
+      "perField": [
+       [
+        "topic",
+        299982
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 64734.96549107805,
+      "spread": 4042.687287605215,
+      "firstTrial": 62010.293347009894,
+      "trials": 5,
+      "buildMs": 4.238542079925537
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "snapshot": false,
+      "buildReads": 93982,
+      "runReads": 206000,
+      "total": 299982,
+      "perField": [
+       [
+        "topic",
+        299982
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 64550.83821899077,
+      "spread": 2384.1258499435207,
+      "firstTrial": 72924.50583058191,
+      "trials": 5,
+      "buildMs": 4.034584045410156
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "topic",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 64643.854208311976,
+      "spread": 1081.0103035115826,
+      "firstTrial": 64175.8382323026,
+      "trials": 5,
+      "buildMs": 0.2749171257019043
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "snapshot": true,
+      "buildReads": 0,
+      "runReads": 5000,
+      "total": 5000,
+      "perField": [
+       [
+        "topic",
+        5000
+       ]
+      ],
+      "reported": 5000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 69754.76839237058,
+      "spread": 3582.2992490432516,
+      "firstTrial": 69226.6112629838,
+      "trials": 5,
+      "buildMs": 0.2257080078125
+     }
+    }
+   ]
+  },
+  {
+   "workload": "in-values",
+   "about": "200 membership queries over three values each, which only a hash index serves",
+   "rows": 5000,
+   "queries": 200,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.0299,
+    "minSelectivity": 0.0198,
+    "maxSelectivity": 0.0366,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "key",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1000000,
+     "total": 1000000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "key",
+      "kind": "hash"
+     },
+     {
+      "field": "key",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 13487.199745453183,
+      "spread": 583.432452386056,
+      "firstTrial": 13397.978419063054,
+      "trials": 5,
+      "buildMs": 1.4224581718444824
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 1333.7705052988065,
+      "spread": 16.98033610383095,
+      "firstTrial": 1333.7705052988065,
+      "trials": 5,
+      "buildMs": 1.2869157791137695
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 704.4890165962156,
+      "spread": 107.25371516512098,
+      "firstTrial": 548.1359902832387,
+      "trials": 5,
+      "buildMs": 1.3138751983642578
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "buildReads": 0,
+      "runReads": 1000000,
+      "total": 1000000,
+      "perField": [
+       [
+        "key",
+        1000000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 9623.115093659115,
+      "spread": 331.206209377493,
+      "firstTrial": 9873.759922450698,
+      "trials": 5,
+      "buildMs": 2.092249870300293
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "buildReads": 100260,
+      "runReads": 22477,
+      "total": 122737,
+      "perField": [
+       [
+        "key",
+        122737
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 46819.66904219637,
+      "spread": 1938.9265215656924,
+      "firstTrial": 46819.66904219637,
+      "trials": 5,
+      "buildMs": 4.346625328063965
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "buildReads": 100260,
+      "runReads": 22477,
+      "total": 122737,
+      "perField": [
+       [
+        "key",
+        122737
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 54419.91588230165,
+      "spread": 2959.634398518967,
+      "firstTrial": 51753.68610320521,
+      "trials": 5,
+      "buildMs": 4.328083038330078
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "key",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 70975.47140948357,
+      "spread": 5914.3235245127,
+      "firstTrial": 69098.57117674872,
+      "trials": 5,
+      "buildMs": 0.2413339614868164
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "buildReads": 0,
+      "runReads": 5000,
+      "total": 5000,
+      "perField": [
+       [
+        "key",
+        5000
+       ]
+      ],
+      "reported": 5000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 99161.30369931855,
+      "spread": 18936.557318894716,
+      "firstTrial": 99161.30369931855,
+      "trials": 5,
+      "buildMs": 0.23941707611083984
+     }
+    }
+   ]
+  },
+  {
+   "workload": "mixed-types",
+   "about": "a column of numbers, strings and booleans queried with `in`: does an index change the answer?",
+   "rows": 5000,
+   "queries": 50,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0.2,
+    "minSelectivity": 0.2,
+    "maxSelectivity": 0.2,
+    "emptyRate": 0
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "v",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 0,
+     "total": 5000
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 250000,
+     "total": 250000
+    },
+    "evaluated": 2,
+    "pruned": 2,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "v",
+      "kind": "hash"
+     },
+     {
+      "field": "v",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 0,
+    "total": 5000
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "buildReads": 0,
+      "runReads": 250000,
+      "total": 250000,
+      "perField": [
+       [
+        "v",
+        250000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 17494.493012636998,
+      "spread": 2185.7974588045618,
+      "firstTrial": 19861.959442488595,
+      "trials": 5,
+      "buildMs": 1.3405423164367676
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "buildReads": 0,
+      "runReads": 250000,
+      "total": 250000,
+      "perField": [
+       [
+        "v",
+        250000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 2111.620230566175,
+      "spread": 19.671352478966583,
+      "firstTrial": 2118.894656112662,
+      "trials": 5,
+      "buildMs": 1.3225831985473633
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "buildReads": 0,
+      "runReads": 250000,
+      "total": 250000,
+      "perField": [
+       [
+        "v",
+        250000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 744.6450761805825,
+      "spread": 25.070105267218764,
+      "firstTrial": 744.6450761805825,
+      "trials": 5,
+      "buildMs": 1.351874828338623
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "buildReads": 0,
+      "runReads": 250000,
+      "total": 250000,
+      "perField": [
+       [
+        "v",
+        250000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 15115.63523808247,
+      "spread": 495.152888845545,
+      "firstTrial": 14647.184878216472,
+      "trials": 5,
+      "buildMs": 1.9522089958190918
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": false,
+     "absent": {
+      "why": "wrong",
+      "detail": "v in [2]: wrong-set, extra 2,7,12,17,22"
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": false,
+     "absent": {
+      "why": "wrong",
+      "detail": "v in [2]: wrong-set, extra 2,7,12,17,22"
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "buildReads": 0,
+      "runReads": 10000,
+      "total": 10000,
+      "perField": [
+       [
+        "v",
+        10000
+       ]
+      ],
+      "reported": 10000
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 21588.173214982035,
+      "spread": 3350.564238680421,
+      "firstTrial": 19175.763445469434,
+      "trials": 5,
+      "buildMs": 0.2325000762939453
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "buildReads": 0,
+      "runReads": 5000,
+      "total": 5000,
+      "perField": [
+       [
+        "v",
+        5000
+       ]
+      ],
+      "reported": 5000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 22366.36240522181,
+      "spread": 5177.470969838891,
+      "firstTrial": 21431.25032318272,
+      "trials": 5,
+      "buildMs": 0.23666715621948242
+     }
+    }
+   ]
+  },
+  {
+   "workload": "conjunct",
+   "about": "300 three-predicate queries where the whole difference is which predicate is tested first",
+   "rows": 5000,
+   "queries": 300,
+   "mutations": 0,
+   "truth": {
+    "medianSelectivity": 0,
+    "minSelectivity": 0,
+    "maxSelectivity": 0.0004,
+    "emptyRate": 0.8333333333333334
+   },
+   "optimal": {
+    "indexes": [
+     {
+      "field": "status",
+      "kind": "hash"
+     }
+    ],
+    "cost": {
+     "buildReads": 5000,
+     "runReads": 1698,
+     "total": 6698
+    },
+    "scanOnly": {
+     "buildReads": 0,
+     "runReads": 1501698,
+     "total": 1501698
+    },
+    "evaluated": 7,
+    "pruned": 15,
+    "capProbe": 0,
+    "candidates": [
+     {
+      "field": "active",
+      "kind": "hash"
+     },
+     {
+      "field": "region",
+      "kind": "hash"
+     },
+     {
+      "field": "status",
+      "kind": "hash"
+     },
+     {
+      "field": "active",
+      "kind": "sorted"
+     },
+     {
+      "field": "region",
+      "kind": "sorted"
+     },
+     {
+      "field": "status",
+      "kind": "sorted"
+     }
+    ],
+    "maxIndexes": 2,
+    "capBinds": false
+   },
+   "reference": {
+    "buildReads": 5000,
+    "runReads": 1698,
+    "total": 6698
+   },
+   "subjects": [
+    {
+     "subject": "Array.filter",
+     "source": "the language",
+     "correct": true,
+     "toll": {
+      "subject": "Array.filter",
+      "buildReads": 0,
+      "runReads": 2302746,
+      "total": 2302746,
+      "perField": [
+       [
+        "active",
+        1500000
+       ],
+       [
+        "region",
+        741300
+       ],
+       [
+        "status",
+        61446
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "Array.filter",
+      "qps": 9854.684560407431,
+      "spread": 354.0562795752521,
+      "firstTrial": 9549.02108454993,
+      "trials": 5,
+      "buildMs": 1.836958885192871
+     }
+    },
+    {
+     "subject": "sift",
+     "source": "sift",
+     "correct": true,
+     "toll": {
+      "subject": "sift",
+      "buildReads": 0,
+      "runReads": 4500000,
+      "total": 4500000,
+      "perField": [
+       [
+        "status",
+        1500000
+       ],
+       [
+        "region",
+        1500000
+       ],
+       [
+        "active",
+        1500000
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "sift",
+      "qps": 842.2303660511782,
+      "spread": 24.191835610886642,
+      "firstTrial": 834.784833934925,
+      "trials": 5,
+      "buildMs": 1.7742500305175781
+     }
+    },
+    {
+     "subject": "mingo",
+     "source": "mingo",
+     "correct": true,
+     "toll": {
+      "subject": "mingo",
+      "buildReads": 0,
+      "runReads": 2302746,
+      "total": 2302746,
+      "perField": [
+       [
+        "active",
+        1500000
+       ],
+       [
+        "region",
+        741300
+       ],
+       [
+        "status",
+        61446
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "mingo",
+      "qps": 768.4733803527596,
+      "spread": 49.727392738019034,
+      "firstTrial": 807.9424331153828,
+      "trials": 5,
+      "buildMs": 1.7978339195251465
+     }
+    },
+    {
+     "subject": "lokijs (no index)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (no index)",
+      "buildReads": 0,
+      "runReads": 2302746,
+      "total": 2302746,
+      "perField": [
+       [
+        "active",
+        1500000
+       ],
+       [
+        "region",
+        741300
+       ],
+       [
+        "status",
+        61446
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (no index)",
+      "qps": 9311.950327076494,
+      "spread": 242.87319115578794,
+      "firstTrial": 9780.628673017858,
+      "trials": 5,
+      "buildMs": 2.709958076477051
+     }
+    },
+    {
+     "subject": "lokijs",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs",
+      "buildReads": 109916,
+      "runReads": 2302746,
+      "total": 2412662,
+      "perField": [
+       [
+        "active",
+        1500000
+       ],
+       [
+        "region",
+        741300
+       ],
+       [
+        "status",
+        171362
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs",
+      "qps": 9474.145483775854,
+      "spread": 362.10150708957553,
+      "firstTrial": 9763.254741027138,
+      "trials": 5,
+      "buildMs": 5.549499988555908
+     }
+    },
+    {
+     "subject": "lokijs (adaptive)",
+     "source": "lokijs",
+     "correct": true,
+     "toll": {
+      "subject": "lokijs (adaptive)",
+      "buildReads": 109916,
+      "runReads": 2302746,
+      "total": 2412662,
+      "perField": [
+       [
+        "active",
+        1500000
+       ],
+       [
+        "region",
+        741300
+       ],
+       [
+        "status",
+        171362
+       ]
+      ]
+     },
+     "throughput": {
+      "subject": "lokijs (adaptive)",
+      "qps": 9398.876575790604,
+      "spread": 171.0678540537956,
+      "firstTrial": 9613.89537655423,
+      "trials": 5,
+      "buildMs": 5.256625175476074
+     }
+    },
+    {
+     "subject": "rowstore",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore",
+      "buildReads": 0,
+      "runReads": 22655,
+      "total": 22655,
+      "perField": [
+       [
+        "active",
+        10000
+       ],
+       [
+        "region",
+        7471
+       ],
+       [
+        "status",
+        5184
+       ]
+      ],
+      "reported": 22655
+     },
+     "throughput": {
+      "subject": "rowstore",
+      "qps": 66455.60013423249,
+      "spread": 5654.876256044132,
+      "firstTrial": 69025.68708275318,
+      "trials": 5,
+      "buildMs": 0.27004194259643555
+     }
+    },
+    {
+     "subject": "rowstore (eager)",
+     "source": "rowstore",
+     "selfIndexing": true,
+     "correct": true,
+     "toll": {
+      "subject": "rowstore (eager)",
+      "buildReads": 0,
+      "runReads": 15000,
+      "total": 15000,
+      "perField": [
+       [
+        "status",
+        5000
+       ],
+       [
+        "region",
+        5000
+       ],
+       [
+        "active",
+        5000
+       ]
+      ],
+      "reported": 15000
+     },
+     "throughput": {
+      "subject": "rowstore (eager)",
+      "qps": 71015.00756321046,
+      "spread": 2638.0388011988252,
+      "firstTrial": 80605.41799291041,
+      "trials": 5,
+      "buildMs": 0.2657909393310547
+     }
+    }
+   ]
+  }
+ ]
+}

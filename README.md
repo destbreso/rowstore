@@ -29,8 +29,8 @@ set that exists for each workload, found by exhaustive search, with a planner
 that was handed the true selectivity of every predicate. It is allowed to know
 the future. This is not.
 
-**It matches that optimum exactly on 22 of 24 workloads.** Mean ratio 1.09x,
-worst case 2.24x.
+Building on first sight (`buildAfter: 1`), **it matches that optimum exactly on
+22 of 24 workloads**, mean 1.09x, worst 2.24x.
 
 | where it loses | ratio | why |
 |---|---|---|
@@ -41,15 +41,34 @@ Both are the same thing: the offline optimum saw the whole workload before
 choosing. Neither is a bug to be fixed by a cleverer heuristic, and pretending
 otherwise would mean guessing, which is the one thing this store does not do.
 
+![Competitive ratio per workload for both arms: the eager arm sits at 1.00x on 22 of 24 workloads, the default arm at about 2.00x on most of them](https://raw.githubusercontent.com/destbreso/rowstore/main/assets/competitive-ratio.svg)
+
+The default waits for a shape to repeat, and that wait is the whole difference:
+mean 2.09x, worst 4.13x on `hash-trap`, exactly one unindexed pass per shape more
+than the eager arm on every workload. The next section is why that trade is the
+default anyway, and one line changes it. Both arms are in the table in
+[BENCHMARKS.md](BENCHMARKS.md), workload by workload, alongside four other
+engines.
+
 Against the incumbent, on the axis where the harness found the most loss
-available (mutations between queries, 20,000 rows, 200 queries):
+available. This is `churn/m=16`: 5,000 rows, 200 equality queries, and sixteen
+insert-and-remove pairs between each of them, so 6,400 mutations in all.
 
 | engine | field reads | queries/s |
-|---|---|---|
-| `rowstore` | 6,000 | 173,938 |
-| `lokijs`, incremental index | 145,649 | 19,600 |
-| `lokijs`, rebuild on invalidate | 7,705,084 | 1,073 |
-| no index at all | 400,000 | 30,080 |
+|---|---:|---:|
+| `rowstore`, eager | 11,400 | 152,745 |
+| `rowstore`, default | 16,368 | 139,235 |
+| `lokijs`, index maintained incrementally | 291,388 | 7,029 |
+| `lokijs`, index rebuilt when invalidated | 21,981,027 | 383 |
+| `lokijs`, no index declared | 1,000,000 | 12,509 |
+| `Array.prototype.filter` | 1,000,000 | 18,689 |
+
+11,400 is also the offline optimum for that workload, so under mutation the
+eager arm pays exactly what perfect foresight pays. Reads are exact and
+reproducible from the seed; the throughput column is one machine's, and the
+harness's own advice is to disbelieve any throughput gap under 1.25x.
+
+![Field reads under mutation, log scale: rowstore at 11,400 against 291,388 for an incrementally maintained lokijs index and 21,981,027 for one rebuilt on invalidation](https://raw.githubusercontent.com/destbreso/rowstore/main/assets/mutation.svg)
 
 ## Why the threshold is two
 
@@ -63,8 +82,16 @@ This store waits for the second sighting anyway, and the reason is the part
 reads cannot see. An index costs memory, and it costs maintenance on every
 mutation, and it has no instrument for either. One repeat is the cheapest
 possible evidence that a shape belongs to the workload rather than being a
-one-off, and the price of asking for it is bounded and known: at most one extra
-pass, which is 2.00x at two queries and 1.01x at two hundred.
+one-off, and the price of asking for it is exactly one unindexed pass, paid once
+per shape.
+
+That price does not amortize, and the measurement says so plainly: where the
+optimum's whole cost is a single build pass, one extra pass is 2.00x whether two
+queries follow or two hundred. It is smaller only where the optimum has to read
+rows anyway (down to 1.44x under heavy mutation) and larger where the wait
+happens twice on one field (4.13x on `hash-trap`). Against no index at all, which
+is the alternative in most real code, the same store is still ahead by a factor
+that grows with every query.
 
 ```js
 new RowStore(rows, { buildAfter: 1 });   // build on first sight
@@ -81,10 +108,20 @@ using a number it made up about itself.
 This is the failure the package exists to avoid, and it is not hypothetical.
 
 lokijs answers `$in` from its binary index without re-verifying the candidates,
-and computes that index's range with type-loose comparators. On a column holding
-both `2` and `"2"`, the same query returns four rows without an index and eight
-with one. Reported as issue #909 in March 2022, still open, the only reply a
-stale bot.
+and computes that index's range with type-loose comparators. Ten rows, five
+holding the number `2` and five holding the string `"2"`, and one query:
+
+```js
+col.find({ $and: [{ v: { $in: [2] } }] });   // 5 rows
+col.ensureIndex("v");
+col.find({ $and: [{ v: { $in: [2] } }] });   // all 10, and nothing changed but the index
+```
+
+Reported as issue #909 in March 2022, still open, the only reply a stale bot. The
+harness reproduces it on its own, from outside: on the `mixed-types` workload both
+indexed lokijs arms fail the correctness gate and print no toll at all, because a
+number for the wrong answer is not a slower or faster number, it is a number
+about a different question.
 
 For a collection that decides on its own when to build, that class of defect is
 worse than a wrong answer: it is a wrong answer that appears only after the
@@ -109,13 +146,14 @@ built, then again, and requires the same answer every time.
 ## What it tells you
 
 ```js
+// 200,000 rows, 1,000 distinct values in `status`, 200 equality queries on it.
 store.stats();
 // {
 //   rows: 200000,
 //   indexes: [{ field: "status", kind: "hash", distinct: 1000, entries: 200000,
-//               builtAfter: 2, buildCost: 200000, saved: 39800000 }],
+//               builtAfter: 2, buildCost: 200000, saved: 39760200 }],
 //   shapes:  [{ field: "status", op: "eq", seen: 200,
-//               estimatedSelectivity: 0.001, observedSelectivity: 0 }],
+//               estimatedSelectivity: 0.001, observedSelectivity: 0.001 }],
 //   queries: 200, reads: 400000, refused: []
 // }
 ```

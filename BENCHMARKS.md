@@ -1,9 +1,55 @@
-# rowtoll
+# rowstore, measured by rowtoll
 
 Node v22.14.0 on darwin/arm64, scale 0.25, 5 trials per subject, seed 12345, index-search cap 2.
 
 
 
+
+## What it cost, against an optimum that knew the future
+
+Every ratio below is this store's total field reads divided by the best index
+set that exists for that workload, found by exhaustive search with a planner
+handed the true selectivity of every predicate. It chose with the whole
+workload in front of it. This store was handed no declared indexes at all and
+had to find them from the queries as they arrived.
+
+**rowstore (eager)** matches the offline optimum exactly on 22 of 24 workloads. Mean 1.09x, worst 2.24x on `conjunct`.
+
+**rowstore** matches the offline optimum exactly on 1 of 24 workloads. Mean 2.09x, worst 4.13x on `hash-trap`.
+
+`rowstore` is the default, which waits for a predicate shape to repeat before
+it builds. That wait costs exactly one unindexed pass, paid once, and it does
+not amortize: where the optimum's entire cost is a single build pass, one extra
+pass is 2.00x however many queries follow. It costs less than that only where
+the optimum has to read rows anyway, and more where the wait happens twice on
+one field, which is what `hash-trap` and `conjunct` are for.
+
+| workload | offline optimum | rowstore | vs optimum | rowstore (eager) | vs optimum |
+|---|---:|---:|---:|---:|---:|
+| `amortize/r=1` | 25,000 | 25,000 | 1.00x | 25,000 | 1.00x |
+| `amortize/r=2` | 25,000 | 50,000 | 2.00x | 25,000 | 1.00x |
+| `amortize/r=8` | 25,000 | 50,000 | 2.00x | 25,000 | 1.00x |
+| `amortize/r=64` | 25,000 | 50,000 | 2.00x | 25,000 | 1.00x |
+| `select-eq/s=1/N` | 5,000 | 10,000 | 2.00x | 5,000 | 1.00x |
+| `select-eq/s=0.001` | 5,000 | 10,000 | 2.00x | 5,000 | 1.00x |
+| `select-eq/s=0.05` | 5,000 | 10,000 | 2.00x | 5,000 | 1.00x |
+| `select-eq/s=0.25` | 5,000 | 10,000 | 2.00x | 5,000 | 1.00x |
+| `select-eq/s=0.5` | 5,000 | 10,000 | 2.00x | 5,000 | 1.00x |
+| `select-eq/s=1` | 5,000 | 10,000 | 2.00x | 5,000 | 1.00x |
+| `select-rng/keep=5%` | 10,000 | 19,687 | 1.97x | 10,000 | 1.00x |
+| `select-rng/keep=20%` | 10,000 | 17,092 | 1.71x | 10,000 | 1.00x |
+| `select-rng/keep=45%` | 10,000 | 21,756 | 2.18x | 10,000 | 1.00x |
+| `select-rng/keep=60%` | 10,000 | 21,826 | 2.18x | 10,000 | 1.00x |
+| `select-rng/keep=100%` | 10,000 | 25,000 | 2.50x | 10,000 | 1.00x |
+| `churn/m=0` | 5,000 | 10,000 | 2.00x | 5,000 | 1.00x |
+| `churn/m=1` | 5,400 | 10,398 | 1.93x | 5,400 | 1.00x |
+| `churn/m=4` | 6,600 | 11,592 | 1.76x | 6,600 | 1.00x |
+| `churn/m=16` | 11,400 | 16,368 | 1.44x | 11,400 | 1.00x |
+| `hash-trap` | 5,000 | 20,643 | 4.13x | 10,000 | 2.00x |
+| `skew` | 5,000 | 10,000 | 2.00x | 5,000 | 1.00x |
+| `in-values` | 5,000 | 10,000 | 2.00x | 5,000 | 1.00x |
+| `mixed-types` | 5,000 | 10,000 | 2.00x | 5,000 | 1.00x |
+| `conjunct` | 6,698 | 22,655 | 3.38x | 15,000 | 2.24x |
 
 ## Method
 
@@ -71,13 +117,23 @@ range queries against hash indexes: 2.00x at one query and one wasted index,
 hundred. So the hostile case is real but it is a corner, and it evaporates the
 moment a workload repeats itself at all.
 
-**The two axes disagree in sign, and the disagreement is the interesting part.**
-On ordered access past roughly 45% selectivity, reads say the index is 2.5x
-better while the clock says it is 0.86x worse, because a sorted index hands back
-positions in value order and the residual filter then walks the rows in random
-order while a scan walks them sequentially. A harness that reported one number
-per workload would have to pick which of those to believe, and picking is not
-neutral. Both are printed.
+**The two axes disagree, and the disagreement is the interesting part.** Take one
+engine with its best index declared against the same engine with nothing
+declared, and widen a range until it keeps the whole collection. The reads
+advantage decays from 2.11x to 1.38x, which is exact and reproducible from the
+seed. The clock advantage decays faster and lands on nothing: about 1.8x at the
+narrow end and 1.00x at the wide one, across runs of this panel. At the top of that
+sweep the index still saves a quarter of the reads and buys no speed at all,
+because a sorted index hands back positions in value order and the residual
+filter then walks the rows in random order while a scan walks them sequentially.
+
+Under mutation the disagreement changes sign outright. At sixteen mutations per
+query the incrementally maintained index reads 5.5x less than the same library
+with no index, and answers fewer queries per second than it, by 1.4x to 1.6x
+depending on the run, because splicing into a sorted array is memory traffic that
+touches no field at all. A harness that reported one number per workload would
+have to pick which of those to believe, and picking is not neutral. Both are
+printed.
 
 Where the real losses live is mutation. An engine that invalidates its index and
 rebuilds on the next query is two orders of magnitude slower than having no index
@@ -98,13 +154,13 @@ Best index set: none. Searched 1 of 4 candidate sets (the rest could not win on 
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 25,000 | 25,000 | 1.00x | - | key 75,000 |
-| sift | 0 | 25,000 | 25,000 | 1.00x | - | key 75,000 |
-| mingo | 0 | 25,000 | 25,000 | 1.00x | - | key 75,000 |
-| lokijs (no index) | 0 | 25,000 | 25,000 | 1.00x | - | key 75,000 |
-| lokijs | 0 | 25,000 | 25,000 | 1.00x | - | key 75,000 |
-| lokijs (adaptive) | 0 | 25,000 | 25,000 | 1.00x | - | key 75,000 |
-| rowstore (self-indexing) | 0 | 25,000 | 25,000 | 1.00x | 25,000 | answers from its own snapshot, so its run reads are a lower bound; key 50,000 |
+| Array.filter | 0 | 25,000 | 25,000 | 1.00x | - | key 25,000 |
+| sift | 0 | 25,000 | 25,000 | 1.00x | - | key 25,000 |
+| mingo | 0 | 25,000 | 25,000 | 1.00x | - | key 25,000 |
+| lokijs (no index) | 0 | 25,000 | 25,000 | 1.00x | - | key 25,000 |
+| lokijs | 0 | 25,000 | 25,000 | 1.00x | - | key 25,000 |
+| lokijs (adaptive) | 0 | 25,000 | 25,000 | 1.00x | - | key 25,000 |
+| rowstore (self-indexing) | 0 | 25,000 | 25,000 | 1.00x | 25,000 | answers from its own snapshot, so its run reads are a lower bound; key 25,000 |
 | rowstore (eager) (self-indexing) | 0 | 25,000 | 25,000 | 1.00x | 25,000 | answers from its own snapshot, so its run reads are a lower bound; key 25,000 |
 | reference, indexes none | 0 | 25,000 | 25,000 | 1.00x | - | the best index set that exists for this workload |
 | reference, no index | 0 | 25,000 | 25,000 | 1.00x | - | what indexing was worth here |
@@ -113,14 +169,14 @@ Best index set: none. Searched 1 of 4 candidate sets (the rest could not win on 
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 895 | 117 | 817 | 8.03 |
-| sift | 312 | 58 | 217 | 6.67 |
-| mingo | 173 | 11 | 173 | 8.20 |
-| lokijs (no index) | 1,939 | 961 | 1,818 | 9.52 |
-| lokijs | 2,152 | 296 | 2,218 | 10.47 |
-| lokijs (adaptive) | 2,199 | 449 | 1,758 | 9.73 |
-| rowstore | 405 | 74 | 405 | 1.30 |
-| rowstore (eager) | 612 | 94 | 612 | 1.31 |
+| Array.filter | 1,147 | 876 | 1,966 | 7.39 |
+| sift | 367 | 70 | 390 | 7.51 |
+| mingo | 160 | 34 | 137 | 6.67 |
+| lokijs (no index) | 2,132 | 392 | 1,979 | 9.70 |
+| lokijs | 2,234 | 252 | 2,092 | 10.09 |
+| lokijs (adaptive) | 2,744 | 769 | 2,936 | 10.46 |
+| rowstore | 921 | 483 | 442 | 1.28 |
+| rowstore (eager) | 631 | 78 | 680 | 1.20 |
 
 ### amortize/r=2
 
@@ -134,12 +190,12 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 50,000 | 50,000 | 2.00x | - | key 100,000 |
-| sift | 0 | 50,000 | 50,000 | 2.00x | - | key 100,000 |
-| mingo | 0 | 50,000 | 50,000 | 2.00x | - | key 100,000 |
-| lokijs (no index) | 0 | 50,000 | 50,000 | 2.00x | - | key 100,000 |
-| lokijs | 568,396 | 333 | 568,729 | 22.75x | - | key 656 |
-| lokijs (adaptive) | 568,396 | 333 | 568,729 | 22.75x | - | key 656 |
+| Array.filter | 0 | 50,000 | 50,000 | 2.00x | - | key 50,000 |
+| sift | 0 | 50,000 | 50,000 | 2.00x | - | key 50,000 |
+| mingo | 0 | 50,000 | 50,000 | 2.00x | - | key 50,000 |
+| lokijs (no index) | 0 | 50,000 | 50,000 | 2.00x | - | key 50,000 |
+| lokijs | 568,396 | 333 | 568,729 | 22.75x | - | key 568,729 |
+| lokijs (adaptive) | 568,396 | 333 | 568,729 | 22.75x | - | key 568,729 |
 | rowstore (self-indexing) | 0 | 50,000 | 50,000 | 2.00x | 50,000 | answers from its own snapshot, so its run reads are a lower bound; key 50,000 |
 | rowstore (eager) (self-indexing) | 0 | 25,000 | 25,000 | 1.00x | 25,000 | answers from its own snapshot, so its run reads are a lower bound; key 25,000 |
 | reference, indexes key:hash | 25,000 | 0 | 25,000 | 1.00x | - | the best index set that exists for this workload |
@@ -149,14 +205,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 1,436 | 792 | 1,122 | 7.66 |
-| sift | 349 | 62 | 349 | 7.42 |
-| mingo | 180 | 16 | 175 | 6.52 |
-| lokijs (no index) | 2,451 | 1,104 | 1,547 | 10.04 |
-| lokijs | 34,335 | 13,303 | 29,250 | 21.82 |
-| lokijs (adaptive) | 35,477 | 23,207 | 10,044 | 21.81 |
-| rowstore | 443 | 146 | 507 | 1.28 |
-| rowstore (eager) | 1,268 | 124 | 1,373 | 1.19 |
+| Array.filter | 1,689 | 890 | 1,085 | 6.43 |
+| sift | 391 | 26 | 358 | 7.34 |
+| mingo | 187 | 23 | 187 | 7.25 |
+| lokijs (no index) | 2,289 | 935 | 1,538 | 9.30 |
+| lokijs | 37,066 | 11,132 | 28,538 | 22.81 |
+| lokijs (adaptive) | 42,667 | 6,524 | 8,479 | 22.24 |
+| rowstore | 550 | 239 | 365 | 1.28 |
+| rowstore (eager) | 1,248 | 251 | 621 | 1.22 |
 
 ### amortize/r=8
 
@@ -170,12 +226,12 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 200,000 | 200,000 | 8.00x | - | key 250,000 |
-| sift | 0 | 200,000 | 200,000 | 8.00x | - | key 250,000 |
-| mingo | 0 | 200,000 | 200,000 | 8.00x | - | key 250,000 |
-| lokijs (no index) | 0 | 200,000 | 200,000 | 8.00x | - | key 250,000 |
-| lokijs | 568,396 | 1,307 | 569,703 | 22.79x | - | key 1,626 |
-| lokijs (adaptive) | 568,396 | 1,307 | 569,703 | 22.79x | - | key 1,626 |
+| Array.filter | 0 | 200,000 | 200,000 | 8.00x | - | key 200,000 |
+| sift | 0 | 200,000 | 200,000 | 8.00x | - | key 200,000 |
+| mingo | 0 | 200,000 | 200,000 | 8.00x | - | key 200,000 |
+| lokijs (no index) | 0 | 200,000 | 200,000 | 8.00x | - | key 200,000 |
+| lokijs | 568,396 | 1,307 | 569,703 | 22.79x | - | key 569,703 |
+| lokijs (adaptive) | 568,396 | 1,307 | 569,703 | 22.79x | - | key 569,703 |
 | rowstore (self-indexing) | 0 | 50,000 | 50,000 | 2.00x | 50,000 | answers from its own snapshot, so its run reads are a lower bound; key 50,000 |
 | rowstore (eager) (self-indexing) | 0 | 25,000 | 25,000 | 1.00x | 25,000 | answers from its own snapshot, so its run reads are a lower bound; key 25,000 |
 | reference, indexes key:hash | 25,000 | 0 | 25,000 | 1.00x | - | the best index set that exists for this workload |
@@ -185,14 +241,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 2,144 | 744 | 1,591 | 6.59 |
-| sift | 397 | 5 | 397 | 7.68 |
-| mingo | 203 | 20 | 202 | 7.46 |
-| lokijs (no index) | 3,277 | 898 | 3,277 | 10.78 |
-| lokijs | 69,541 | 13,717 | 61,166 | 22.92 |
-| lokijs (adaptive) | 115,246 | 46,059 | 82,973 | 21.68 |
-| rowstore | 3,014 | 1,278 | 1,948 | 1.18 |
-| rowstore (eager) | 5,247 | 2,616 | 2,616 | 1.11 |
+| Array.filter | 2,281 | 551 | 1,739 | 7.67 |
+| sift | 340 | 7 | 341 | 7.43 |
+| mingo | 225 | 10 | 225 | 6.93 |
+| lokijs (no index) | 3,069 | 435 | 2,660 | 9.48 |
+| lokijs | 117,864 | 48,797 | 117,864 | 22.06 |
+| lokijs (adaptive) | 123,000 | 43,166 | 105,901 | 22.27 |
+| rowstore | 2,029 | 916 | 3,658 | 1.33 |
+| rowstore (eager) | 4,861 | 1,333 | 6,129 | 1.17 |
 
 ### amortize/r=64
 
@@ -206,12 +262,12 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,600,000 | 1,600,000 | 64.00x | - | key 1,650,000 |
-| sift | 0 | 1,600,000 | 1,600,000 | 64.00x | - | key 1,650,000 |
-| mingo | 0 | 1,600,000 | 1,600,000 | 64.00x | - | key 1,650,000 |
-| lokijs (no index) | 0 | 1,600,000 | 1,600,000 | 64.00x | - | key 1,650,000 |
-| lokijs | 568,396 | 10,651 | 579,047 | 23.16x | - | key 10,971 |
-| lokijs (adaptive) | 568,396 | 10,651 | 579,047 | 23.16x | - | key 10,971 |
+| Array.filter | 0 | 1,600,000 | 1,600,000 | 64.00x | - | key 1,600,000 |
+| sift | 0 | 1,600,000 | 1,600,000 | 64.00x | - | key 1,600,000 |
+| mingo | 0 | 1,600,000 | 1,600,000 | 64.00x | - | key 1,600,000 |
+| lokijs (no index) | 0 | 1,600,000 | 1,600,000 | 64.00x | - | key 1,600,000 |
+| lokijs | 568,396 | 10,651 | 579,047 | 23.16x | - | key 579,047 |
+| lokijs (adaptive) | 568,396 | 10,651 | 579,047 | 23.16x | - | key 579,047 |
 | rowstore (self-indexing) | 0 | 50,000 | 50,000 | 2.00x | 50,000 | answers from its own snapshot, so its run reads are a lower bound; key 50,000 |
 | rowstore (eager) (self-indexing) | 0 | 25,000 | 25,000 | 1.00x | 25,000 | answers from its own snapshot, so its run reads are a lower bound; key 25,000 |
 | reference, indexes key:hash | 25,000 | 0 | 25,000 | 1.00x | - | the best index set that exists for this workload |
@@ -221,14 +277,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 3,124 | 433 | 3,165 | 7.52 |
-| sift | 420 | 1 | 421 | 6.65 |
-| mingo | 235 | 5 | 234 | 6.59 |
-| lokijs (no index) | 3,407 | 359 | 3,407 | 10.30 |
-| lokijs | 129,807 | 25,989 | 113,635 | 22.62 |
-| lokijs (adaptive) | 144,537 | 20,524 | 171,850 | 22.18 |
-| rowstore | 15,552 | 9,812 | 13,204 | 1.18 |
-| rowstore (eager) | 22,225 | 12,561 | 19,921 | 1.22 |
+| Array.filter | 3,151 | 520 | 3,441 | 6.45 |
+| sift | 383 | 1 | 384 | 7.69 |
+| mingo | 234 | 6 | 234 | 7.58 |
+| lokijs (no index) | 3,656 | 20 | 3,671 | 10.67 |
+| lokijs | 181,840 | 37,210 | 199,351 | 22.34 |
+| lokijs (adaptive) | 166,342 | 46,418 | 160,034 | 22.05 |
+| rowstore | 20,744 | 7,704 | 24,606 | 1.04 |
+| rowstore (eager) | 35,030 | 1,526 | 36,572 | 1.10 |
 
 ### select-eq/s=1/N
 
@@ -242,12 +298,12 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs | 109,912 | 7,600 | 117,512 | 23.50x | - | key 7,675 |
-| lokijs (adaptive) | 109,912 | 7,600 | 117,512 | 23.50x | - | key 7,675 |
+| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs | 109,912 | 7,600 | 117,512 | 23.50x | - | key 117,512 |
+| lokijs (adaptive) | 109,912 | 7,600 | 117,512 | 23.50x | - | key 117,512 |
 | rowstore (self-indexing) | 0 | 10,000 | 10,000 | 2.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; key 10,000 |
 | rowstore (eager) (self-indexing) | 0 | 5,000 | 5,000 | 1.00x | 5,000 | answers from its own snapshot, so its run reads are a lower bound; key 5,000 |
 | reference, indexes key:hash | 5,000 | 0 | 5,000 | 1.00x | - | the best index set that exists for this workload |
@@ -257,14 +313,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 18,007 | 422 | 18,007 | 1.28 |
-| sift | 2,122 | 15 | 2,100 | 1.24 |
-| mingo | 1,196 | 14 | 1,179 | 1.31 |
-| lokijs (no index) | 22,950 | 892 | 23,033 | 1.86 |
-| lokijs | 694,747 | 49,418 | 596,273 | 4.62 |
-| lokijs (adaptive) | 745,573 | 96,138 | 604,078 | 4.48 |
-| rowstore | 301,016 | 31,460 | 303,030 | 0.20 |
-| rowstore (eager) | 441,786 | 60,107 | 552,105 | 0.26 |
+| Array.filter | 19,120 | 988 | 19,276 | 1.46 |
+| sift | 1,899 | 169 | 1,739 | 1.39 |
+| mingo | 1,173 | 24 | 1,159 | 1.40 |
+| lokijs (no index) | 23,142 | 165 | 23,114 | 1.92 |
+| lokijs | 738,459 | 55,242 | 652,705 | 4.52 |
+| lokijs (adaptive) | 703,091 | 82,957 | 587,300 | 4.64 |
+| rowstore | 356,347 | 43,032 | 317,167 | 0.23 |
+| rowstore (eager) | 481,251 | 76,776 | 481,251 | 0.19 |
 
 ### select-eq/s=0.001
 
@@ -278,12 +334,12 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs | 110,038 | 8,408 | 118,446 | 23.69x | - | key 8,489 |
-| lokijs (adaptive) | 110,038 | 8,408 | 118,446 | 23.69x | - | key 8,489 |
+| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs | 110,038 | 8,408 | 118,446 | 23.69x | - | key 118,446 |
+| lokijs (adaptive) | 110,038 | 8,408 | 118,446 | 23.69x | - | key 118,446 |
 | rowstore (self-indexing) | 0 | 10,000 | 10,000 | 2.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; key 10,000 |
 | rowstore (eager) (self-indexing) | 0 | 5,000 | 5,000 | 1.00x | 5,000 | answers from its own snapshot, so its run reads are a lower bound; key 5,000 |
 | reference, indexes key:hash | 5,000 | 0 | 5,000 | 1.00x | - | the best index set that exists for this workload |
@@ -293,14 +349,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 20,156 | 275 | 19,957 | 1.28 |
-| sift | 2,073 | 7 | 2,080 | 1.33 |
-| mingo | 1,139 | 167 | 1,006 | 1.33 |
-| lokijs (no index) | 25,584 | 2,090 | 26,992 | 1.86 |
-| lokijs | 767,999 | 54,300 | 754,598 | 4.43 |
-| lokijs (adaptive) | 803,884 | 107,818 | 710,060 | 4.41 |
-| rowstore | 329,512 | 26,279 | 344,160 | 0.22 |
-| rowstore (eager) | 482,751 | 92,367 | 512,219 | 0.18 |
+| Array.filter | 21,627 | 435 | 18,806 | 1.28 |
+| sift | 1,909 | 10 | 1,906 | 1.22 |
+| mingo | 1,184 | 15 | 1,179 | 1.28 |
+| lokijs (no index) | 27,066 | 890 | 31,602 | 1.80 |
+| lokijs | 810,127 | 45,688 | 733,719 | 4.22 |
+| lokijs (adaptive) | 809,035 | 87,962 | 700,933 | 4.35 |
+| rowstore | 388,318 | 26,890 | 371,517 | 0.18 |
+| rowstore (eager) | 579,359 | 22,766 | 549,198 | 0.18 |
 
 ### select-eq/s=0.05
 
@@ -314,12 +370,12 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs | 81,184 | 57,279 | 138,463 | 27.69x | - | key 57,866 |
-| lokijs (adaptive) | 81,184 | 57,279 | 138,463 | 27.69x | - | key 57,866 |
+| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs | 81,184 | 57,279 | 138,463 | 27.69x | - | key 138,463 |
+| lokijs (adaptive) | 81,184 | 57,279 | 138,463 | 27.69x | - | key 138,463 |
 | rowstore (self-indexing) | 0 | 10,000 | 10,000 | 2.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; key 10,000 |
 | rowstore (eager) (self-indexing) | 0 | 5,000 | 5,000 | 1.00x | 5,000 | answers from its own snapshot, so its run reads are a lower bound; key 5,000 |
 | reference, indexes key:hash | 5,000 | 0 | 5,000 | 1.00x | - | the best index set that exists for this workload |
@@ -329,14 +385,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 12,986 | 627 | 12,986 | 1.26 |
-| sift | 2,016 | 33 | 2,061 | 1.27 |
-| mingo | 1,157 | 6 | 1,160 | 1.25 |
-| lokijs (no index) | 16,375 | 1,153 | 18,456 | 1.77 |
-| lokijs | 154,694 | 10,218 | 154,694 | 3.42 |
-| lokijs (adaptive) | 160,917 | 4,957 | 160,503 | 3.45 |
-| rowstore | 84,998 | 16,014 | 84,465 | 0.22 |
-| rowstore (eager) | 98,918 | 30,681 | 74,525 | 0.19 |
+| Array.filter | 13,375 | 915 | 13,343 | 1.29 |
+| sift | 2,082 | 12 | 2,103 | 1.27 |
+| mingo | 1,184 | 8 | 1,195 | 1.36 |
+| lokijs (no index) | 15,827 | 708 | 15,401 | 1.75 |
+| lokijs | 165,574 | 8,644 | 169,300 | 3.17 |
+| lokijs (adaptive) | 160,133 | 16,403 | 110,193 | 3.27 |
+| rowstore | 87,343 | 4,614 | 87,343 | 0.19 |
+| rowstore (eager) | 101,881 | 4,970 | 113,526 | 0.19 |
 
 ### select-eq/s=0.25
 
@@ -350,12 +406,12 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs | 55,516 | 256,731 | 312,247 | 62.45x | - | key 259,222 |
-| lokijs (adaptive) | 55,516 | 256,731 | 312,247 | 62.45x | - | key 259,222 |
+| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs | 55,516 | 256,731 | 312,247 | 62.45x | - | key 312,247 |
+| lokijs (adaptive) | 55,516 | 256,731 | 312,247 | 62.45x | - | key 312,247 |
 | rowstore (self-indexing) | 0 | 10,000 | 10,000 | 2.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; key 10,000 |
 | rowstore (eager) (self-indexing) | 0 | 5,000 | 5,000 | 1.00x | 5,000 | answers from its own snapshot, so its run reads are a lower bound; key 5,000 |
 | reference, indexes key:hash | 5,000 | 0 | 5,000 | 1.00x | - | the best index set that exists for this workload |
@@ -365,14 +421,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 15,423 | 227 | 15,525 | 1.31 |
-| sift | 1,958 | 14 | 1,956 | 1.29 |
-| mingo | 1,205 | 13 | 1,207 | 1.37 |
-| lokijs (no index) | 16,760 | 492 | 16,760 | 2.16 |
-| lokijs | 38,009 | 2,042 | 38,009 | 2.70 |
-| lokijs (adaptive) | 38,912 | 1,565 | 38,858 | 2.72 |
-| rowstore | 25,811 | 769 | 25,811 | 0.21 |
-| rowstore (eager) | 27,884 | 741 | 27,835 | 0.45 |
+| Array.filter | 15,760 | 789 | 14,671 | 1.38 |
+| sift | 2,145 | 21 | 2,126 | 1.29 |
+| mingo | 1,203 | 10 | 1,211 | 1.29 |
+| lokijs (no index) | 17,347 | 1,494 | 17,347 | 2.16 |
+| lokijs | 39,541 | 1,148 | 40,686 | 2.67 |
+| lokijs (adaptive) | 40,596 | 672 | 41,390 | 2.66 |
+| rowstore | 27,340 | 1,238 | 27,340 | 0.21 |
+| rowstore (eager) | 27,967 | 97 | 27,967 | 0.21 |
 
 ### select-eq/s=0.5
 
@@ -386,12 +442,12 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs | 47,644 | 506,548 | 554,192 | 110.84x | - | key 511,687 |
-| lokijs (adaptive) | 47,644 | 506,548 | 554,192 | 110.84x | - | key 511,687 |
+| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs | 47,644 | 506,548 | 554,192 | 110.84x | - | key 554,192 |
+| lokijs (adaptive) | 47,644 | 506,548 | 554,192 | 110.84x | - | key 554,192 |
 | rowstore (self-indexing) | 0 | 10,000 | 10,000 | 2.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; key 10,000 |
 | rowstore (eager) (self-indexing) | 0 | 5,000 | 5,000 | 1.00x | 5,000 | answers from its own snapshot, so its run reads are a lower bound; key 5,000 |
 | reference, indexes key:hash | 5,000 | 0 | 5,000 | 1.00x | - | the best index set that exists for this workload |
@@ -401,14 +457,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 11,574 | 1,568 | 10,861 | 1.38 |
-| sift | 1,964 | 35 | 1,964 | 1.32 |
-| mingo | 1,229 | 3 | 1,232 | 1.39 |
-| lokijs (no index) | 12,651 | 153 | 12,602 | 1.84 |
-| lokijs | 21,769 | 138 | 21,763 | 2.61 |
-| lokijs (adaptive) | 21,307 | 191 | 21,175 | 2.57 |
-| rowstore | 13,941 | 155 | 13,941 | 0.25 |
-| rowstore (eager) | 14,298 | 9 | 14,301 | 0.23 |
+| Array.filter | 12,040 | 1,064 | 13,090 | 1.37 |
+| sift | 2,143 | 69 | 2,170 | 1.35 |
+| mingo | 1,188 | 432 | 1,233 | 1.30 |
+| lokijs (no index) | 12,282 | 879 | 12,158 | 1.99 |
+| lokijs | 20,885 | 1,264 | 21,568 | 2.80 |
+| lokijs (adaptive) | 21,384 | 2,612 | 21,752 | 2.78 |
+| rowstore | 14,193 | 475 | 14,744 | 0.23 |
+| rowstore (eager) | 13,161 | 2,225 | 14,841 | 0.22 |
 
 ### select-eq/s=1
 
@@ -422,12 +478,12 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs | 9,998 | 1,007,000 | 1,016,998 | 203.40x | - | key 1,017,069 |
-| lokijs (adaptive) | 9,998 | 1,007,000 | 1,016,998 | 203.40x | - | key 1,017,069 |
+| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs | 9,998 | 1,007,000 | 1,016,998 | 203.40x | - | key 1,016,998 |
+| lokijs (adaptive) | 9,998 | 1,007,000 | 1,016,998 | 203.40x | - | key 1,016,998 |
 | rowstore (self-indexing) | 0 | 10,000 | 10,000 | 2.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; key 10,000 |
 | rowstore (eager) (self-indexing) | 0 | 5,000 | 5,000 | 1.00x | 5,000 | answers from its own snapshot, so its run reads are a lower bound; key 5,000 |
 | reference, indexes key:hash | 5,000 | 0 | 5,000 | 1.00x | - | the best index set that exists for this workload |
@@ -437,14 +493,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 14,385 | 795 | 12,568 | 1.25 |
-| sift | 1,984 | 17 | 2,003 | 1.32 |
-| mingo | 1,358 | 14 | 1,358 | 1.32 |
-| lokijs (no index) | 11,517 | 1,635 | 11,293 | 1.94 |
-| lokijs | 10,705 | 617 | 10,033 | 2.09 |
-| lokijs (adaptive) | 10,996 | 276 | 9,610 | 2.05 |
-| rowstore | 6,240 | 358 | 5,752 | 0.27 |
-| rowstore (eager) | 6,245 | 238 | 6,000 | 0.19 |
+| Array.filter | 14,559 | 224 | 14,350 | 1.30 |
+| sift | 2,338 | 18 | 2,299 | 1.30 |
+| mingo | 1,361 | 11 | 1,367 | 1.30 |
+| lokijs (no index) | 13,278 | 329 | 13,278 | 1.89 |
+| lokijs | 11,308 | 469 | 11,512 | 1.86 |
+| lokijs (adaptive) | 11,279 | 296 | 11,501 | 1.96 |
+| rowstore | 6,397 | 136 | 6,508 | 0.24 |
+| rowstore (eager) | 6,636 | 328 | 6,745 | 0.18 |
 
 ### select-rng/keep=5%
 
@@ -458,12 +514,12 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,563,727 | 1,563,727 | 156.37x | - | score 1,532,543, active 50,558 |
-| sift | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,020,000, active 1,010,000 |
-| mingo | 0 | 1,563,727 | 1,563,727 | 156.37x | - | score 1,532,543, active 50,558 |
-| lokijs (no index) | 0 | 1,563,727 | 1,563,727 | 156.37x | - | score 1,532,543, active 50,558 |
-| lokijs | 157,564 | 567,719 | 725,283 | 72.53x | - | score 526,575, active 50,558 |
-| lokijs (adaptive) | 157,564 | 567,719 | 725,283 | 72.53x | - | score 526,575, active 50,558 |
+| Array.filter | 0 | 1,563,727 | 1,563,727 | 156.37x | - | score 1,513,685, active 50,042 |
+| sift | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,000,000, active 1,000,000 |
+| mingo | 0 | 1,563,727 | 1,563,727 | 156.37x | - | score 1,513,685, active 50,042 |
+| lokijs (no index) | 0 | 1,563,727 | 1,563,727 | 156.37x | - | score 1,513,685, active 50,042 |
+| lokijs | 157,564 | 567,719 | 725,283 | 72.53x | - | score 627,525, active 97,758 |
+| lokijs (adaptive) | 157,564 | 567,719 | 725,283 | 72.53x | - | score 627,525, active 97,758 |
 | rowstore (self-indexing) | 0 | 19,687 | 19,687 | 1.97x | 19,687 | answers from its own snapshot, so its run reads are a lower bound; score 14,429, active 5,258 |
 | rowstore (eager) (self-indexing) | 0 | 10,000 | 10,000 | 1.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; score 5,000, active 5,000 |
 | reference, indexes active:hash, score:sorted | 10,000 | 0 | 10,000 | 1.00x | - | the best index set that exists for this workload |
@@ -473,14 +529,14 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 12,813 | 150 | 12,773 | 1.24 |
-| sift | 732 | 7 | 727 | 1.31 |
-| mingo | 647 | 1 | 644 | 1.31 |
-| lokijs (no index) | 9,266 | 142 | 9,266 | 1.85 |
-| lokijs | 17,411 | 58 | 17,391 | 3.76 |
-| lokijs (adaptive) | 17,249 | 114 | 17,139 | 3.82 |
-| rowstore | 5,769 | 90 | 5,709 | 0.25 |
-| rowstore (eager) | 6,059 | 61 | 6,059 | 0.19 |
+| Array.filter | 13,374 | 148 | 13,374 | 1.26 |
+| sift | 892 | 13 | 882 | 1.24 |
+| mingo | 631 | 11 | 621 | 1.31 |
+| lokijs (no index) | 9,332 | 133 | 9,175 | 1.95 |
+| lokijs | 17,235 | 546 | 17,846 | 3.85 |
+| lokijs (adaptive) | 17,558 | 541 | 17,064 | 3.81 |
+| rowstore | 5,871 | 25 | 5,811 | 0.22 |
+| rowstore (eager) | 6,039 | 198 | 6,216 | 0.19 |
 
 ### select-rng/keep=20%
 
@@ -494,12 +550,12 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,802,568 | 1,802,568 | 180.26x | - | score 1,615,862, active 200,890 |
-| sift | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,020,000, active 1,010,000 |
-| mingo | 0 | 1,802,568 | 1,802,568 | 180.26x | - | score 1,615,862, active 200,890 |
-| lokijs (no index) | 0 | 1,802,568 | 1,802,568 | 180.26x | - | score 1,615,862, active 200,890 |
-| lokijs | 157,564 | 806,550 | 964,114 | 96.41x | - | score 609,886, active 200,890 |
-| lokijs (adaptive) | 157,564 | 806,550 | 964,114 | 96.41x | - | score 609,886, active 200,890 |
+| Array.filter | 0 | 1,802,568 | 1,802,568 | 180.26x | - | score 1,603,688, active 198,880 |
+| sift | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,000,000, active 1,000,000 |
+| mingo | 0 | 1,802,568 | 1,802,568 | 180.26x | - | score 1,603,688, active 198,880 |
+| lokijs (no index) | 0 | 1,802,568 | 1,802,568 | 180.26x | - | score 1,603,688, active 198,880 |
+| lokijs | 157,564 | 806,550 | 964,114 | 96.41x | - | score 717,518, active 246,596 |
+| lokijs (adaptive) | 157,564 | 806,550 | 964,114 | 96.41x | - | score 717,518, active 246,596 |
 | rowstore (self-indexing) | 0 | 17,092 | 17,092 | 1.71x | 17,092 | answers from its own snapshot, so its run reads are a lower bound; score 11,087, active 6,005 |
 | rowstore (eager) (self-indexing) | 0 | 10,000 | 10,000 | 1.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; score 5,000, active 5,000 |
 | reference, indexes active:hash, score:sorted | 10,000 | 0 | 10,000 | 1.00x | - | the best index set that exists for this workload |
@@ -509,14 +565,14 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 10,305 | 1,025 | 9,332 | 1.23 |
-| sift | 734 | 34 | 645 | 1.33 |
-| mingo | 568 | 10 | 469 | 1.30 |
-| lokijs (no index) | 7,119 | 322 | 7,017 | 1.88 |
-| lokijs | 11,742 | 159 | 9,742 | 3.81 |
-| lokijs (adaptive) | 11,831 | 248 | 11,831 | 3.81 |
-| rowstore | 4,463 | 85 | 4,476 | 0.25 |
-| rowstore (eager) | 4,560 | 101 | 4,491 | 0.18 |
+| Array.filter | 10,385 | 252 | 10,602 | 1.26 |
+| sift | 904 | 10 | 898 | 1.27 |
+| mingo | 571 | 5 | 572 | 1.33 |
+| lokijs (no index) | 7,345 | 380 | 7,189 | 1.94 |
+| lokijs | 12,006 | 218 | 11,215 | 3.80 |
+| lokijs (adaptive) | 11,912 | 509 | 12,254 | 3.68 |
+| rowstore | 4,379 | 1,267 | 4,395 | 0.25 |
+| rowstore (eager) | 4,431 | 481 | 4,685 | 0.25 |
 
 ### select-rng/keep=45%
 
@@ -530,12 +586,12 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 2,169,848 | 2,169,848 | 216.98x | - | score 1,742,187, active 451,173 |
-| sift | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,020,000, active 1,010,000 |
-| mingo | 0 | 2,169,848 | 2,169,848 | 216.98x | - | score 1,742,187, active 451,173 |
-| lokijs (no index) | 0 | 2,169,848 | 2,169,848 | 216.98x | - | score 1,742,187, active 451,173 |
-| lokijs | 157,564 | 1,173,847 | 1,331,411 | 133.14x | - | score 736,228, active 451,173 |
-| lokijs (adaptive) | 157,564 | 1,173,847 | 1,331,411 | 133.14x | - | score 736,228, active 451,173 |
+| Array.filter | 0 | 2,169,848 | 2,169,848 | 216.98x | - | score 1,723,087, active 446,761 |
+| sift | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,000,000, active 1,000,000 |
+| mingo | 0 | 2,169,848 | 2,169,848 | 216.98x | - | score 1,723,087, active 446,761 |
+| lokijs (no index) | 0 | 2,169,848 | 2,169,848 | 216.98x | - | score 1,723,087, active 446,761 |
+| lokijs | 157,564 | 1,173,847 | 1,331,411 | 133.14x | - | score 836,934, active 494,477 |
+| lokijs (adaptive) | 157,564 | 1,173,847 | 1,331,411 | 133.14x | - | score 836,934, active 494,477 |
 | rowstore (self-indexing) | 0 | 21,756 | 21,756 | 2.18x | 21,756 | answers from its own snapshot, so its run reads are a lower bound; score 14,550, active 7,206 |
 | rowstore (eager) (self-indexing) | 0 | 10,000 | 10,000 | 1.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; score 5,000, active 5,000 |
 | reference, indexes active:hash, score:sorted | 10,000 | 0 | 10,000 | 1.00x | - | the best index set that exists for this workload |
@@ -545,14 +601,14 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 8,341 | 1,440 | 7,684 | 1.24 |
-| sift | 729 | 5 | 743 | 1.25 |
-| mingo | 475 | 2 | 474 | 1.31 |
-| lokijs (no index) | 6,056 | 21 | 6,061 | 1.88 |
-| lokijs | 8,214 | 133 | 8,214 | 3.85 |
-| lokijs (adaptive) | 8,179 | 181 | 8,245 | 3.90 |
-| rowstore | 3,196 | 27 | 3,196 | 0.22 |
-| rowstore (eager) | 3,269 | 72 | 3,292 | 0.18 |
+| Array.filter | 8,761 | 1,061 | 9,588 | 1.30 |
+| sift | 909 | 9 | 909 | 1.29 |
+| mingo | 479 | 6 | 474 | 1.32 |
+| lokijs (no index) | 6,065 | 303 | 5,695 | 1.88 |
+| lokijs | 8,320 | 159 | 8,190 | 3.87 |
+| lokijs (adaptive) | 8,009 | 297 | 7,935 | 3.93 |
+| rowstore | 3,038 | 207 | 3,038 | 0.23 |
+| rowstore (eager) | 3,228 | 98 | 3,193 | 0.30 |
 
 ### select-rng/keep=60%
 
@@ -566,12 +622,12 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 2,393,045 | 2,393,045 | 239.30x | - | score 1,815,523, active 601,174 |
-| sift | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,020,000, active 1,010,000 |
-| mingo | 0 | 2,393,045 | 2,393,045 | 239.30x | - | score 1,815,523, active 601,174 |
-| lokijs (no index) | 0 | 2,393,045 | 2,393,045 | 239.30x | - | score 1,815,523, active 601,174 |
-| lokijs | 157,564 | 1,397,043 | 1,554,607 | 155.46x | - | score 809,561, active 601,174 |
-| lokijs (adaptive) | 157,564 | 1,397,043 | 1,554,607 | 155.46x | - | score 809,561, active 601,174 |
+| Array.filter | 0 | 2,393,045 | 2,393,045 | 239.30x | - | score 1,797,851, active 595,194 |
+| sift | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,000,000, active 1,000,000 |
+| mingo | 0 | 2,393,045 | 2,393,045 | 239.30x | - | score 1,797,851, active 595,194 |
+| lokijs (no index) | 0 | 2,393,045 | 2,393,045 | 239.30x | - | score 1,797,851, active 595,194 |
+| lokijs | 157,564 | 1,397,043 | 1,554,607 | 155.46x | - | score 911,697, active 642,910 |
+| lokijs (adaptive) | 157,564 | 1,397,043 | 1,554,607 | 155.46x | - | score 911,697, active 642,910 |
 | rowstore (self-indexing) | 0 | 21,826 | 21,826 | 2.18x | 21,826 | answers from its own snapshot, so its run reads are a lower bound; score 13,836, active 7,990 |
 | rowstore (eager) (self-indexing) | 0 | 10,000 | 10,000 | 1.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; score 5,000, active 5,000 |
 | reference, indexes active:hash, score:sorted | 10,000 | 0 | 10,000 | 1.00x | - | the best index set that exists for this workload |
@@ -581,14 +637,14 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 8,716 | 261 | 8,742 | 1.50 |
-| sift | 727 | 8 | 731 | 1.28 |
-| mingo | 430 | 1 | 431 | 1.32 |
-| lokijs (no index) | 5,610 | 89 | 5,778 | 1.81 |
-| lokijs | 6,878 | 110 | 6,848 | 3.81 |
-| lokijs (adaptive) | 6,977 | 138 | 7,036 | 3.79 |
-| rowstore | 2,861 | 29 | 2,861 | 0.23 |
-| rowstore (eager) | 2,998 | 98 | 2,917 | 0.19 |
+| Array.filter | 9,015 | 710 | 9,231 | 1.24 |
+| sift | 912 | 3 | 912 | 1.27 |
+| mingo | 440 | 7 | 429 | 1.30 |
+| lokijs (no index) | 5,658 | 131 | 5,658 | 1.86 |
+| lokijs | 6,806 | 124 | 6,689 | 3.80 |
+| lokijs (adaptive) | 6,899 | 97 | 6,805 | 3.74 |
+| rowstore | 2,812 | 31 | 2,812 | 0.23 |
+| rowstore (eager) | 2,863 | 117 | 3,012 | 0.18 |
 
 ### select-rng/keep=100%
 
@@ -602,12 +658,12 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,020,000, active 1,010,000 |
-| sift | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,020,000, active 1,010,000 |
-| mingo | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,020,000, active 1,010,000 |
-| lokijs (no index) | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,020,000, active 1,010,000 |
-| lokijs | 157,564 | 2,000,400 | 2,157,964 | 215.80x | - | score 1,010,404, active 1,010,000 |
-| lokijs (adaptive) | 157,564 | 2,000,400 | 2,157,964 | 215.80x | - | score 1,010,404, active 1,010,000 |
+| Array.filter | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,000,000, active 1,000,000 |
+| sift | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,000,000, active 1,000,000 |
+| mingo | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,000,000, active 1,000,000 |
+| lokijs (no index) | 0 | 3,000,000 | 3,000,000 | 300.00x | - | score 2,000,000, active 1,000,000 |
+| lokijs | 157,564 | 2,000,400 | 2,157,964 | 215.80x | - | score 1,110,248, active 1,047,716 |
+| lokijs (adaptive) | 157,564 | 2,000,400 | 2,157,964 | 215.80x | - | score 1,110,248, active 1,047,716 |
 | rowstore (self-indexing) | 0 | 25,000 | 25,000 | 2.50x | 25,000 | answers from its own snapshot, so its run reads are a lower bound; score 15,000, active 10,000 |
 | rowstore (eager) (self-indexing) | 0 | 10,000 | 10,000 | 1.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; score 5,000, active 5,000 |
 | reference, indexes active:hash, score:sorted | 10,000 | 0 | 10,000 | 1.00x | - | the best index set that exists for this workload |
@@ -617,14 +673,14 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 7,937 | 261 | 7,937 | 1.31 |
-| sift | 732 | 18 | 741 | 1.31 |
-| mingo | 349 | 1 | 350 | 1.31 |
-| lokijs (no index) | 4,670 | 26 | 4,701 | 1.85 |
-| lokijs | 4,852 | 102 | 4,852 | 3.85 |
-| lokijs (adaptive) | 4,875 | 94 | 4,965 | 3.77 |
-| rowstore | 2,811 | 68 | 2,811 | 0.26 |
-| rowstore (eager) | 2,997 | 161 | 3,104 | 0.19 |
+| Array.filter | 8,363 | 93 | 8,509 | 1.26 |
+| sift | 907 | 11 | 925 | 1.34 |
+| mingo | 362 | 4 | 358 | 1.31 |
+| lokijs (no index) | 4,748 | 81 | 4,639 | 1.86 |
+| lokijs | 4,831 | 77 | 4,831 | 3.74 |
+| lokijs (adaptive) | 4,855 | 7 | 4,855 | 3.89 |
+| rowstore | 2,752 | 12 | 2,759 | 0.21 |
+| rowstore (eager) | 2,919 | 123 | 3,025 | 0.18 |
 
 ### churn/m=0
 
@@ -638,12 +694,12 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,010,000 |
-| lokijs | 109,936 | 8,347 | 118,283 | 23.66x | - | key 8,426 |
-| lokijs (adaptive) | 109,936 | 8,347 | 118,283 | 23.66x | - | key 8,426 |
+| Array.filter | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
+| lokijs | 109,936 | 8,347 | 118,283 | 23.66x | - | key 118,283 |
+| lokijs (adaptive) | 109,936 | 8,347 | 118,283 | 23.66x | - | key 118,283 |
 | rowstore (self-indexing) | 0 | 10,000 | 10,000 | 2.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; key 10,000 |
 | rowstore (eager) (self-indexing) | 0 | 5,000 | 5,000 | 1.00x | 5,000 | answers from its own snapshot, so its run reads are a lower bound; key 5,000 |
 | reference, indexes key:hash | 5,000 | 0 | 5,000 | 1.00x | - | the best index set that exists for this workload |
@@ -653,14 +709,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 18,376 | 641 | 17,794 | 1.24 |
-| sift | 1,692 | 33 | 1,669 | 1.28 |
-| mingo | 1,028 | 11 | 1,032 | 1.30 |
-| lokijs (no index) | 16,954 | 259 | 16,846 | 1.78 |
-| lokijs | 576,231 | 6,999 | 523,560 | 4.52 |
-| lokijs (adaptive) | 562,588 | 54,405 | 604,990 | 4.85 |
-| rowstore | 339,919 | 17,551 | 366,609 | 0.20 |
-| rowstore (eager) | 485,633 | 25,173 | 485,633 | 0.19 |
+| Array.filter | 13,802 | 988 | 13,643 | 1.25 |
+| sift | 2,046 | 11 | 2,036 | 1.26 |
+| mingo | 1,158 | 17 | 1,148 | 1.29 |
+| lokijs (no index) | 17,182 | 376 | 15,952 | 1.73 |
+| lokijs | 574,713 | 5,543 | 574,713 | 4.46 |
+| lokijs (adaptive) | 600,827 | 23,527 | 580,410 | 4.45 |
+| rowstore | 361,446 | 28,806 | 362,510 | 0.20 |
+| rowstore (eager) | 518,807 | 60,585 | 530,211 | 0.19 |
 
 ### churn/m=1
 
@@ -674,12 +730,12 @@ Best index set: key:hash. Searched 3 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,000,000 | 1,000,000 | 185.19x | - | key 1,010,000 |
-| sift | 0 | 1,000,000 | 1,000,000 | 185.19x | - | key 1,010,000 |
-| mingo | 0 | 1,000,000 | 1,000,000 | 185.19x | - | key 1,010,000 |
-| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 185.19x | - | key 1,010,000 |
-| lokijs | 109,936 | 21,888,952 | 21,998,888 | 4073.87x | - | key 21,998,938 |
-| lokijs (adaptive) | 109,936 | 19,173 | 129,109 | 23.91x | - | key 19,261 |
+| Array.filter | 0 | 1,000,000 | 1,000,000 | 185.19x | - | key 1,000,000 |
+| sift | 0 | 1,000,000 | 1,000,000 | 185.19x | - | key 1,000,000 |
+| mingo | 0 | 1,000,000 | 1,000,000 | 185.19x | - | key 1,000,000 |
+| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 185.19x | - | key 1,000,000 |
+| lokijs | 109,936 | 21,888,952 | 21,998,888 | 4073.87x | - | key 21,998,888 |
+| lokijs (adaptive) | 109,936 | 19,173 | 129,109 | 23.91x | - | key 129,109 |
 | rowstore (self-indexing) | 0 | 10,398 | 10,398 | 1.93x | 10,398 | answers from its own snapshot, so its run reads are a lower bound; key 10,398 |
 | rowstore (eager) (self-indexing) | 0 | 5,400 | 5,400 | 1.00x | 5,400 | answers from its own snapshot, so its run reads are a lower bound; key 5,400 |
 | reference, indexes key:hash | 5,000 | 400 | 5,400 | 1.00x | - | the best index set that exists for this workload |
@@ -689,14 +745,14 @@ Best index set: key:hash. Searched 3 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 18,054 | 229 | 16,025 | 1.32 |
-| sift | 1,689 | 5 | 2,093 | 1.26 |
-| mingo | 997 | 5 | 1,128 | 1.30 |
-| lokijs (no index) | 16,396 | 322 | 16,578 | 1.85 |
-| lokijs | 389 | 1 | 390 | 4.38 |
-| lokijs (adaptive) | 88,646 | 1,517 | 83,097 | 4.44 |
-| rowstore | 260,346 | 3,442 | 263,562 | 0.20 |
-| rowstore (eager) | 357,595 | 5,269 | 148,025 | 0.20 |
+| Array.filter | 18,707 | 198 | 18,619 | 1.30 |
+| sift | 2,036 | 37 | 2,039 | 1.25 |
+| mingo | 1,145 | 12 | 1,145 | 1.59 |
+| lokijs (no index) | 16,303 | 552 | 15,233 | 1.80 |
+| lokijs | 388 | 4 | 388 | 4.98 |
+| lokijs (adaptive) | 88,497 | 4,490 | 88,497 | 4.49 |
+| rowstore | 259,839 | 128,962 | 318,598 | 0.22 |
+| rowstore (eager) | 370,542 | 52,941 | 405,235 | 0.22 |
 
 ### churn/m=4
 
@@ -710,12 +766,12 @@ Best index set: key:hash. Searched 3 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,000,000 | 1,000,000 | 151.52x | - | key 1,005,000 |
-| sift | 0 | 1,000,000 | 1,000,000 | 151.52x | - | key 1,005,000 |
-| mingo | 0 | 1,000,000 | 1,000,000 | 151.52x | - | key 1,005,000 |
-| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 151.52x | - | key 1,010,000 |
-| lokijs | 109,936 | 21,883,541 | 21,993,477 | 3332.34x | - | key 21,993,582 |
-| lokijs (adaptive) | 109,936 | 51,545 | 161,481 | 24.47x | - | key 51,589 |
+| Array.filter | 0 | 1,000,000 | 1,000,000 | 151.52x | - | key 1,000,000 |
+| sift | 0 | 1,000,000 | 1,000,000 | 151.52x | - | key 1,000,000 |
+| mingo | 0 | 1,000,000 | 1,000,000 | 151.52x | - | key 1,000,000 |
+| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 151.52x | - | key 1,000,000 |
+| lokijs | 109,936 | 21,883,541 | 21,993,477 | 3332.34x | - | key 21,993,477 |
+| lokijs (adaptive) | 109,936 | 51,545 | 161,481 | 24.47x | - | key 161,481 |
 | rowstore (self-indexing) | 0 | 11,592 | 11,592 | 1.76x | 11,592 | answers from its own snapshot, so its run reads are a lower bound; key 11,592 |
 | rowstore (eager) (self-indexing) | 0 | 6,600 | 6,600 | 1.00x | 6,600 | answers from its own snapshot, so its run reads are a lower bound; key 6,600 |
 | reference, indexes key:hash | 5,000 | 1,600 | 6,600 | 1.00x | - | the best index set that exists for this workload |
@@ -725,14 +781,14 @@ Best index set: key:hash. Searched 3 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 17,773 | 126 | 17,720 | 1.27 |
-| sift | 1,696 | 11 | 1,615 | 1.27 |
-| mingo | 991 | 14 | 967 | 1.32 |
-| lokijs (no index) | 15,823 | 356 | 16,914 | 1.81 |
-| lokijs | 389 | 1 | 386 | 4.45 |
-| lokijs (adaptive) | 26,594 | 448 | 26,302 | 4.44 |
-| rowstore | 238,961 | 8,970 | 243,816 | 0.21 |
-| rowstore (eager) | 330,101 | 1,227 | 334,985 | 0.20 |
+| Array.filter | 18,572 | 978 | 18,037 | 1.34 |
+| sift | 2,039 | 11 | 2,028 | 1.30 |
+| mingo | 1,158 | 12 | 1,158 | 1.28 |
+| lokijs (no index) | 15,337 | 639 | 15,940 | 1.90 |
+| lokijs | 389 | 9 | 380 | 4.51 |
+| lokijs (adaptive) | 27,021 | 381 | 27,030 | 4.73 |
+| rowstore | 252,246 | 25,642 | 253,098 | 0.22 |
+| rowstore (eager) | 334,472 | 40,814 | 298,026 | 0.19 |
 
 ### churn/m=16
 
@@ -746,12 +802,12 @@ Best index set: key:hash. Searched 4 of 4 candidate sets (the rest could not win
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,000,000 | 1,000,000 | 87.72x | - | key 1,005,000 |
-| sift | 0 | 1,000,000 | 1,000,000 | 87.72x | - | key 1,005,000 |
-| mingo | 0 | 1,000,000 | 1,000,000 | 87.72x | - | key 1,005,000 |
-| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 87.72x | - | key 1,010,000 |
-| lokijs | 109,936 | 21,871,091 | 21,981,027 | 1928.16x | - | key 21,981,006 |
-| lokijs (adaptive) | 109,936 | 181,452 | 291,388 | 25.56x | - | key 181,494 |
+| Array.filter | 0 | 1,000,000 | 1,000,000 | 87.72x | - | key 1,000,000 |
+| sift | 0 | 1,000,000 | 1,000,000 | 87.72x | - | key 1,000,000 |
+| mingo | 0 | 1,000,000 | 1,000,000 | 87.72x | - | key 1,000,000 |
+| lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 87.72x | - | key 1,000,000 |
+| lokijs | 109,936 | 21,871,091 | 21,981,027 | 1928.16x | - | key 21,981,027 |
+| lokijs (adaptive) | 109,936 | 181,452 | 291,388 | 25.56x | - | key 291,388 |
 | rowstore (self-indexing) | 0 | 16,368 | 16,368 | 1.44x | 16,368 | answers from its own snapshot, so its run reads are a lower bound; key 16,368 |
 | rowstore (eager) (self-indexing) | 0 | 11,400 | 11,400 | 1.00x | 11,400 | answers from its own snapshot, so its run reads are a lower bound; key 11,400 |
 | reference, indexes key:hash | 5,000 | 6,400 | 11,400 | 1.00x | - | the best index set that exists for this workload |
@@ -761,14 +817,14 @@ Best index set: key:hash. Searched 4 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 17,378 | 648 | 17,378 | 1.30 |
-| sift | 1,702 | 7 | 1,698 | 1.26 |
-| mingo | 1,026 | 3 | 1,030 | 1.24 |
-| lokijs (no index) | 12,391 | 636 | 12,873 | 1.79 |
-| lokijs | 381 | 3 | 378 | 4.51 |
-| lokijs (adaptive) | 6,954 | 214 | 6,748 | 4.82 |
-| rowstore | 135,513 | 8,191 | 141,773 | 0.19 |
-| rowstore (eager) | 152,973 | 31,986 | 158,484 | 0.21 |
+| Array.filter | 18,689 | 456 | 16,047 | 1.36 |
+| sift | 2,012 | 15 | 2,002 | 1.24 |
+| mingo | 1,160 | 7 | 1,160 | 1.27 |
+| lokijs (no index) | 12,509 | 199 | 12,432 | 1.76 |
+| lokijs | 383 | 2 | 382 | 4.59 |
+| lokijs (adaptive) | 7,029 | 47 | 6,988 | 5.13 |
+| rowstore | 139,235 | 10,117 | 144,522 | 0.22 |
+| rowstore (eager) | 152,745 | 41,653 | 152,745 | 0.19 |
 
 ### hash-trap
 
@@ -782,12 +838,12 @@ Best index set: score:sorted. Searched 3 of 4 candidate sets (the rest could not
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 1,645,483 | 1,645,483 | 329.10x | - | score 1,650,483 |
-| sift | 0 | 2,100,000 | 2,100,000 | 420.00x | - | score 2,105,000 |
-| mingo | 0 | 1,645,483 | 1,645,483 | 329.10x | - | score 1,650,483 |
-| lokijs (no index) | 0 | 1,645,483 | 1,645,483 | 329.10x | - | score 1,650,483 |
-| lokijs | 109,848 | 550,213 | 660,061 | 132.01x | - | score 550,250 |
-| lokijs (adaptive) | 109,848 | 550,213 | 660,061 | 132.01x | - | score 550,250 |
+| Array.filter | 0 | 1,645,483 | 1,645,483 | 329.10x | - | score 1,645,483 |
+| sift | 0 | 2,100,000 | 2,100,000 | 420.00x | - | score 2,100,000 |
+| mingo | 0 | 1,645,483 | 1,645,483 | 329.10x | - | score 1,645,483 |
+| lokijs (no index) | 0 | 1,645,483 | 1,645,483 | 329.10x | - | score 1,645,483 |
+| lokijs | 109,848 | 550,213 | 660,061 | 132.01x | - | score 660,061 |
+| lokijs (adaptive) | 109,848 | 550,213 | 660,061 | 132.01x | - | score 660,061 |
 | rowstore (self-indexing) | 0 | 20,643 | 20,643 | 4.13x | 20,643 | score 20,643 |
 | rowstore (eager) (self-indexing) | 0 | 10,000 | 10,000 | 2.00x | 10,000 | score 10,000 |
 | reference, indexes score:sorted | 5,000 | 0 | 5,000 | 1.00x | - | the best index set that exists for this workload |
@@ -797,14 +853,14 @@ Best index set: score:sorted. Searched 3 of 4 candidate sets (the rest could not
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 16,235 | 75 | 12,457 | 1.59 |
-| sift | 1,093 | 2 | 1,093 | 1.26 |
-| mingo | 679 | 2 | 680 | 1.32 |
-| lokijs (no index) | 9,754 | 111 | 9,622 | 1.85 |
-| lokijs | 19,124 | 231 | 19,065 | 3.32 |
-| lokijs (adaptive) | 19,999 | 328 | 20,127 | 3.31 |
-| rowstore | 7,387 | 299 | 7,181 | 0.22 |
-| rowstore (eager) | 7,820 | 19 | 7,831 | 0.19 |
+| Array.filter | 14,956 | 930 | 14,466 | 1.61 |
+| sift | 1,382 | 12 | 1,382 | 1.29 |
+| mingo | 680 | 6 | 680 | 1.29 |
+| lokijs (no index) | 9,877 | 739 | 9,492 | 2.01 |
+| lokijs | 19,173 | 748 | 19,529 | 3.28 |
+| lokijs (adaptive) | 19,454 | 258 | 19,454 | 3.56 |
+| rowstore | 7,214 | 235 | 7,214 | 0.26 |
+| rowstore (eager) | 7,495 | 460 | 8,014 | 0.21 |
 
 ### skew
 
@@ -818,12 +874,12 @@ Best index set: topic:hash. Searched 2 of 4 candidate sets (the rest could not w
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 2,000,000 | 2,000,000 | 400.00x | - | topic 2,010,000 |
-| sift | 0 | 2,000,000 | 2,000,000 | 400.00x | - | topic 2,010,000 |
-| mingo | 0 | 2,000,000 | 2,000,000 | 400.00x | - | topic 2,010,000 |
-| lokijs (no index) | 0 | 2,000,000 | 2,000,000 | 400.00x | - | topic 2,010,000 |
-| lokijs | 93,982 | 206,000 | 299,982 | 60.00x | - | topic 207,983 |
-| lokijs (adaptive) | 93,982 | 206,000 | 299,982 | 60.00x | - | topic 207,983 |
+| Array.filter | 0 | 2,000,000 | 2,000,000 | 400.00x | - | topic 2,000,000 |
+| sift | 0 | 2,000,000 | 2,000,000 | 400.00x | - | topic 2,000,000 |
+| mingo | 0 | 2,000,000 | 2,000,000 | 400.00x | - | topic 2,000,000 |
+| lokijs (no index) | 0 | 2,000,000 | 2,000,000 | 400.00x | - | topic 2,000,000 |
+| lokijs | 93,982 | 206,000 | 299,982 | 60.00x | - | topic 299,982 |
+| lokijs (adaptive) | 93,982 | 206,000 | 299,982 | 60.00x | - | topic 299,982 |
 | rowstore (self-indexing) | 0 | 10,000 | 10,000 | 2.00x | 10,000 | answers from its own snapshot, so its run reads are a lower bound; topic 10,000 |
 | rowstore (eager) (self-indexing) | 0 | 5,000 | 5,000 | 1.00x | 5,000 | answers from its own snapshot, so its run reads are a lower bound; topic 5,000 |
 | reference, indexes topic:hash | 5,000 | 0 | 5,000 | 1.00x | - | the best index set that exists for this workload |
@@ -833,14 +889,14 @@ Best index set: topic:hash. Searched 2 of 4 candidate sets (the rest could not w
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 13,812 | 3,636 | 13,452 | 1.31 |
-| sift | 1,681 | 3 | 1,682 | 1.28 |
-| mingo | 1,045 | 3 | 1,048 | 1.30 |
-| lokijs (no index) | 13,432 | 703 | 12,891 | 1.84 |
-| lokijs | 66,533 | 3,166 | 66,533 | 3.92 |
-| lokijs (adaptive) | 70,517 | 3,175 | 70,517 | 3.83 |
-| rowstore | 65,761 | 2,002 | 65,603 | 0.21 |
-| rowstore (eager) | 69,239 | 1,021 | 69,239 | 0.21 |
+| Array.filter | 13,841 | 536 | 3,080 | 1.34 |
+| sift | 1,949 | 277 | 845 | 1.30 |
+| mingo | 1,129 | 25 | 1,141 | 1.45 |
+| lokijs (no index) | 13,199 | 830 | 12,857 | 2.10 |
+| lokijs | 64,735 | 4,043 | 62,010 | 4.24 |
+| lokijs (adaptive) | 64,551 | 2,384 | 72,925 | 4.03 |
+| rowstore | 64,644 | 1,081 | 64,176 | 0.27 |
+| rowstore (eager) | 69,755 | 3,582 | 69,227 | 0.23 |
 
 ### in-values
 
@@ -858,8 +914,8 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 | sift | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
 | mingo | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
 | lokijs (no index) | 0 | 1,000,000 | 1,000,000 | 200.00x | - | key 1,000,000 |
-| lokijs | 100,260 | 22,477 | 122,737 | 24.55x | - | key 22,477 |
-| lokijs (adaptive) | 100,260 | 22,477 | 122,737 | 24.55x | - | key 22,477 |
+| lokijs | 100,260 | 22,477 | 122,737 | 24.55x | - | key 122,737 |
+| lokijs (adaptive) | 100,260 | 22,477 | 122,737 | 24.55x | - | key 122,737 |
 | rowstore (self-indexing) | 0 | 10,000 | 10,000 | 2.00x | 10,000 | key 10,000 |
 | rowstore (eager) (self-indexing) | 0 | 5,000 | 5,000 | 1.00x | 5,000 | key 5,000 |
 | reference, indexes key:hash | 5,000 | 0 | 5,000 | 1.00x | - | the best index set that exists for this workload |
@@ -869,14 +925,14 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 13,281 | 223 | 13,442 | 1.29 |
-| sift | 1,243 | 29 | 1,173 | 1.26 |
-| mingo | 734 | 9 | 727 | 1.31 |
-| lokijs (no index) | 9,619 | 766 | 10,450 | 2.03 |
-| lokijs | 53,413 | 7,000 | 46,542 | 4.33 |
-| lokijs (adaptive) | 53,055 | 2,101 | 51,195 | 4.18 |
-| rowstore | 75,315 | 773 | 69,766 | 0.20 |
-| rowstore (eager) | 100,749 | 11,633 | 93,276 | 0.19 |
+| Array.filter | 13,487 | 583 | 13,398 | 1.42 |
+| sift | 1,334 | 17 | 1,334 | 1.29 |
+| mingo | 704 | 107 | 548 | 1.31 |
+| lokijs (no index) | 9,623 | 331 | 9,874 | 2.09 |
+| lokijs | 46,820 | 1,939 | 46,820 | 4.35 |
+| lokijs (adaptive) | 54,420 | 2,960 | 51,754 | 4.33 |
+| rowstore | 70,975 | 5,914 | 69,099 | 0.24 |
+| rowstore (eager) | 99,161 | 18,937 | 99,161 | 0.24 |
 
 ### mixed-types
 
@@ -905,14 +961,14 @@ Best index set: v:hash. Searched 2 of 4 candidate sets (the rest could not win o
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 19,277 | 217 | 19,361 | 1.31 |
-| sift | 1,881 | 16 | 1,880 | 1.34 |
-| mingo | 722 | 13 | 766 | 1.55 |
-| lokijs (no index) | 16,380 | 607 | 16,380 | 2.03 |
+| Array.filter | 17,494 | 2,186 | 19,862 | 1.34 |
+| sift | 2,112 | 20 | 2,119 | 1.32 |
+| mingo | 745 | 25 | 745 | 1.35 |
+| lokijs (no index) | 15,116 | 495 | 14,647 | 1.95 |
 | lokijs | - | - | - | WRONG ANSWER: v in [2]: wrong-set, extra 2,7,12,17,22 |
 | lokijs (adaptive) | - | - | - | WRONG ANSWER: v in [2]: wrong-set, extra 2,7,12,17,22 |
-| rowstore | 20,826 | 1,134 | 8,206 | 0.23 |
-| rowstore (eager) | 24,465 | 3,603 | 24,465 | 0.22 |
+| rowstore | 21,588 | 3,351 | 19,176 | 0.23 |
+| rowstore (eager) | 22,366 | 5,177 | 21,431 | 0.24 |
 
 > lokijs answered a query differently from the oracle: v in [2]: wrong-set, extra 2,7,12,17,22
 
@@ -930,12 +986,12 @@ Best index set: status:hash. Searched 7 of 22 candidate sets (the rest could not
 
 | engine | build reads | run reads | total | vs best | self-reported | notes |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
-| Array.filter | 0 | 2,302,746 | 2,302,746 | 343.80x | - | active 1,505,000, region 743,771, status 61,630 |
-| sift | 0 | 4,500,000 | 4,500,000 | 671.84x | - | status 1,505,000, region 1,505,000, active 1,505,000 |
-| mingo | 0 | 2,302,746 | 2,302,746 | 343.80x | - | active 1,505,000, region 743,771, status 61,630 |
-| lokijs (no index) | 0 | 2,302,746 | 2,302,746 | 343.80x | - | active 1,505,000, region 743,771, status 61,630 |
-| lokijs | 109,916 | 2,302,746 | 2,412,662 | 360.21x | - | active 1,505,000, region 743,771, status 61,630 |
-| lokijs (adaptive) | 109,916 | 2,302,746 | 2,412,662 | 360.21x | - | active 1,505,000, region 743,771, status 61,630 |
+| Array.filter | 0 | 2,302,746 | 2,302,746 | 343.80x | - | active 1,500,000, region 741,300, status 61,446 |
+| sift | 0 | 4,500,000 | 4,500,000 | 671.84x | - | status 1,500,000, region 1,500,000, active 1,500,000 |
+| mingo | 0 | 2,302,746 | 2,302,746 | 343.80x | - | active 1,500,000, region 741,300, status 61,446 |
+| lokijs (no index) | 0 | 2,302,746 | 2,302,746 | 343.80x | - | active 1,500,000, region 741,300, status 61,446 |
+| lokijs | 109,916 | 2,302,746 | 2,412,662 | 360.21x | - | active 1,500,000, region 741,300, status 171,362 |
+| lokijs (adaptive) | 109,916 | 2,302,746 | 2,412,662 | 360.21x | - | active 1,500,000, region 741,300, status 171,362 |
 | rowstore (self-indexing) | 0 | 22,655 | 22,655 | 3.38x | 22,655 | active 10,000, region 7,471, status 5,184 |
 | rowstore (eager) (self-indexing) | 0 | 15,000 | 15,000 | 2.24x | 15,000 | status 5,000, region 5,000, active 5,000 |
 | reference, indexes status:hash | 5,000 | 1,698 | 6,698 | 1.00x | - | the best index set that exists for this workload |
@@ -945,11 +1001,11 @@ Best index set: status:hash. Searched 7 of 22 candidate sets (the rest could not
 
 | engine | queries/s | IQR | first trial | build ms / why absent |
 | --- | ---: | ---: | ---: | ---: |
-| Array.filter | 11,527 | 2,220 | 11,771 | 2.05 |
-| sift | 756 | 12 | 757 | 1.80 |
-| mingo | 711 | 6 | 711 | 1.91 |
-| lokijs (no index) | 9,242 | 400 | 9,242 | 2.45 |
-| lokijs | 9,475 | 675 | 9,071 | 5.56 |
-| lokijs (adaptive) | 9,652 | 283 | 9,453 | 5.02 |
-| rowstore | 63,256 | 2,806 | 62,412 | 0.29 |
-| rowstore (eager) | 72,443 | 1,817 | 72,443 | 0.31 |
+| Array.filter | 9,855 | 354 | 9,549 | 1.84 |
+| sift | 842 | 24 | 835 | 1.77 |
+| mingo | 768 | 50 | 808 | 1.80 |
+| lokijs (no index) | 9,312 | 243 | 9,781 | 2.71 |
+| lokijs | 9,474 | 362 | 9,763 | 5.55 |
+| lokijs (adaptive) | 9,399 | 171 | 9,614 | 5.26 |
+| rowstore | 66,456 | 5,655 | 69,026 | 0.27 |
+| rowstore (eager) | 71,015 | 2,638 | 80,605 | 0.27 |

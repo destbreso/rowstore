@@ -7,7 +7,7 @@
 // measured against the best index set that exists, found by exhaustive search
 // with a planner that was told the true selectivity of every predicate.
 
-import { adapter, competitors, defaultWorkloads, runAll, textReport, markdownReport } from "rowtoll";
+import { adapter, defaultWorkloads, markdownReport, panel, runAll, textReport } from "rowtoll";
 import type { Query as ArenaQuery, Row } from "rowtoll";
 import { RowStore } from "../src/store.js";
 import type { Condition, Query } from "../src/types.js";
@@ -49,22 +49,114 @@ export function rowstoreSubject(buildAfter?: number) {
   });
 }
 
+const ARMS = ["rowstore", "rowstore (eager)"] as const;
+
+/**
+ * The competitive ratio, per workload and in summary.
+ *
+ * This is the number the README leads with, so it is computed from the run
+ * rather than copied out of it by hand. The denominator is the offline optimum:
+ * the best index set that exists for the workload, found by exhaustive search
+ * with a planner that was told the true selectivity of every predicate. It saw
+ * the whole workload before choosing and this store saw nothing, so a ratio of
+ * 1.00x means the price of not knowing the future was zero.
+ */
+function summarize(rows: ReturnType<typeof runAll>): string {
+  const ratioOf = (w: (typeof rows)[number], arm: string): number | null => {
+    const s = w.subjects.find((x) => x.subject === arm);
+    return s?.toll ? s.toll.total / w.reference.total : null;
+  };
+
+  const lines = [
+    "| workload | offline optimum | rowstore | vs optimum | rowstore (eager) | vs optimum |",
+    "|---|---:|---:|---:|---:|---:|",
+  ];
+  const ratios: Record<string, number[]> = { rowstore: [], "rowstore (eager)": [] };
+  const worst: Record<string, { name: string; ratio: number }> = {
+    rowstore: { name: "-", ratio: 0 },
+    "rowstore (eager)": { name: "-", ratio: 0 },
+  };
+  for (const w of rows) {
+    const cells: string[] = [];
+    for (const arm of ARMS) {
+      const r = ratioOf(w, arm);
+      const s = w.subjects.find((x) => x.subject === arm);
+      cells.push(s?.toll ? s.toll.total.toLocaleString("en-US") : `absent: ${s?.absent?.why ?? "?"}`);
+      cells.push(r === null ? "-" : `${r.toFixed(2)}x`);
+      if (r !== null) {
+        ratios[arm]!.push(r);
+        if (r > worst[arm]!.ratio) worst[arm] = { name: w.workload, ratio: r };
+      }
+    }
+    lines.push(
+      `| \`${w.workload}\` | ${w.reference.total.toLocaleString("en-US")} | ${cells.join(" | ")} |`,
+    );
+  }
+
+  const stat = (arm: string): string => {
+    const r = ratios[arm]!;
+    const exact = r.filter((x) => x <= 1.0001).length;
+    const mean = r.reduce((a, b) => a + b, 0) / r.length;
+    return (
+      `**${arm}** matches the offline optimum exactly on ${exact} of ${r.length} workloads. ` +
+      `Mean ${mean.toFixed(2)}x, worst ${worst[arm]!.ratio.toFixed(2)}x on \`${worst[arm]!.name}\`.`
+    );
+  };
+
+  return [
+    "## What it cost, against an optimum that knew the future",
+    "",
+    "Every ratio below is this store's total field reads divided by the best index",
+    "set that exists for that workload, found by exhaustive search with a planner",
+    "handed the true selectivity of every predicate. It chose with the whole",
+    "workload in front of it. This store was handed no declared indexes at all and",
+    "had to find them from the queries as they arrived.",
+    "",
+    stat("rowstore (eager)"),
+    "",
+    stat("rowstore"),
+    "",
+    "`rowstore` is the default, which waits for a predicate shape to repeat before",
+    "it builds. That wait costs exactly one unindexed pass, paid once, and it does",
+    "not amortize: where the optimum's entire cost is a single build pass, one extra",
+    "pass is 2.00x however many queries follow. It costs less than that only where",
+    "the optimum has to read rows anyway, and more where the wait happens twice on",
+    "one field, which is what `hash-trap` and `conjunct` are for.",
+    "",
+    ...lines,
+  ].join("\n");
+}
+
 const scale = Number(process.argv[2] ?? 0.25);
-const subjects = [...(await competitors()), rowstoreSubject(), rowstoreSubject(1)];
+const trials = Number(process.argv[3] ?? 5);
+// `panel()` rather than `competitors()`, because the engines that failed to load
+// are half the result. This benchmark once ran with sift, mingo and lokijs all
+// absent and printed a three-row table that looked complete.
+const { subjects: installed, missing } = await panel();
+const subjects = [...installed, rowstoreSubject(), rowstoreSubject(1)];
 const results = runAll(defaultWorkloads(scale), subjects, {
-  trials: Number(process.argv[3] ?? 5),
+  trials,
   onProgress: (m) => process.stderr.write(`  ${m}\n`),
 });
 process.stdout.write(textReport(results));
-if (process.env.OUT) {
+if (process.env.OUT ?? process.env.OUT_JSON) {
   const { writeFileSync } = await import("node:fs");
-  writeFileSync(process.env.OUT, markdownReport(results, {
+  const meta = {
     node: process.version,
     platform: `${process.platform}/${process.arch}`,
     scale,
-    trials: Number(process.argv[3] ?? 5),
+    trials,
     seed: 12345,
     maxIndexes: 2,
     generatedBy: "rowstore/bench/arena.ts",
-  }));
+    missing,
+  };
+  if (process.env.OUT) {
+    writeFileSync(
+      process.env.OUT,
+      markdownReport(results, { ...meta, title: "rowstore, measured by rowtoll", intro: summarize(results) }),
+    );
+  }
+  // The raw run, so the figures are drawn from the same numbers the tables are.
+  if (process.env.OUT_JSON) writeFileSync(process.env.OUT_JSON, JSON.stringify({ meta, results }, null, 1));
 }
