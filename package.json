@@ -48,6 +48,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "verify:pack": "node scripts/verify-pack.mjs",
+    "smoke": "node scripts/smoke-published.mjs",
+    "bench": "vite-node bench/arena.ts",
     "prepack": "npm run build && node scripts/verify-pack.mjs"
   },
   "keywords": [
@@ -64,7 +66,7 @@
   ],
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "rowtoll": "file:../rowtoll",
+    "rowtoll": "^0.1.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
