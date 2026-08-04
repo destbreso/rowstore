@@ -1,0 +1,72 @@
+{
+  "name": "rowstore",
+  "version": "0.1.0",
+  "description": "An in-memory row store that decides its own indexes by watching the queries you actually run. No index declarations, no configuration: it counts predicate shapes, builds an index the moment the arithmetic says it pays, maintains it incrementally through mutations, and tells you what it did and why.",
+  "author": {
+    "name": "David Estevez",
+    "email": "dev.destbreso@gmail.com"
+  },
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/destbreso/rowstore.git"
+  },
+  "homepage": "https://github.com/destbreso/rowstore#readme",
+  "bugs": {
+    "url": "https://github.com/destbreso/rowstore/issues"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify:pack": "node scripts/verify-pack.mjs",
+    "prepack": "npm run build && node scripts/verify-pack.mjs"
+  },
+  "keywords": [
+    "collection",
+    "in-memory",
+    "index",
+    "auto-index",
+    "adaptive",
+    "query",
+    "selectivity",
+    "database",
+    "lokijs",
+    "typescript"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "rowtoll": "file:../rowtoll",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
