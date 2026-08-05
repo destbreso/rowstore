@@ -7,8 +7,23 @@
 // measured against the best index set that exists, found by exhaustive search
 // with a planner that was told the true selectivity of every predicate.
 
-import { adapter, defaultWorkloads, markdownReport, panel, runAll, textReport } from "rowtoll";
+import {
+  adapter,
+  applyReplicas,
+  checksum,
+  defaultWorkloads,
+  machine,
+  markdownReport,
+  panel,
+  planFrom,
+  runAll,
+  serveReplica,
+  spawnReplicas,
+  summarizeCalibrator,
+  textReport,
+} from "rowtoll";
 import type { Query as ArenaQuery, Row } from "rowtoll";
+import { fileURLToPath } from "node:url";
 import { RowStore } from "../src/store.js";
 import type { Condition, Query } from "../src/types.js";
 
@@ -129,24 +144,60 @@ function summarize(rows: ReturnType<typeof runAll>): string {
 
 const scale = Number(process.argv[2] ?? 0.25);
 const trials = Number(process.argv[3] ?? 5);
+// Independent processes to repeat the TIMING in. The reads axis is a count and
+// is measured once whatever this says; the clock is an estimate and one process
+// cannot say how uncertain it is, so a published clock figure here runs several.
+const replicates = Number(process.argv[4] ?? 1);
+const seed = 12345;
 // `panel()` rather than `competitors()`, because the engines that failed to load
 // are half the result. This benchmark once ran with sift, mingo and lokijs all
 // absent and printed a three-row table that looked complete.
 const { subjects: installed, missing } = await panel();
 const subjects = [...installed, rowstoreSubject(), rowstoreSubject(1)];
-const results = runAll(defaultWorkloads(scale), subjects, {
+const workloads = defaultWorkloads(scale, seed);
+
+// A replica of this same script: it times what the parent asked for, writes it
+// where the parent said, and prints nothing at all. The parent owns stdout.
+if (serveReplica(workloads, subjects, (m) => process.stderr.write(`  ${m}\n`))) process.exit(0);
+
+const results = runAll(workloads, subjects, {
   trials,
+  // With replicates the parent measures only the axis that cannot come out
+  // differently, and hands the clock to processes that do nothing else.
+  tollOnly: replicates > 1,
   onProgress: (m) => process.stderr.write(`  ${m}\n`),
 });
+
+let calibrator;
+if (replicates > 1) {
+  const plan = planFrom(results, workloads, { scale, seed, trials });
+  const payloads = spawnReplicas(plan, {
+    replicates,
+    // Spelled out rather than left to the default, which re-runs the current
+    // command line: vite-node has already taken the script path out of argv by
+    // the time this runs, so the default would restart the runner with the
+    // scale where the filename belongs.
+    command: process.argv[0]!,
+    args: [process.argv[1]!, fileURLToPath(import.meta.url), String(scale), String(trials), "1"],
+    onProgress: (m) => process.stderr.write(`\n${m}\n`),
+  });
+  applyReplicas(results, payloads);
+  calibrator = summarizeCalibrator(payloads.map((p) => p.calibrator));
+}
+
 process.stdout.write(textReport(results));
 if (process.env.OUT ?? process.env.OUT_JSON) {
   const { writeFileSync } = await import("node:fs");
   const meta = {
     node: process.version,
     platform: `${process.platform}/${process.arch}`,
+    machine: machine(),
     scale,
     trials,
-    seed: 12345,
+    replicates,
+    calibrator,
+    checksum: checksum(workloads),
+    seed,
     maxIndexes: 2,
     generatedBy: "rowstore/bench/arena.ts",
     missing,

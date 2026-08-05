@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.1.4
+
+**The throughput column in the README was one process's opinion, and now it is
+seven processes' agreement.** `rowtoll` 0.2.0 repeats the timing axis in separate
+processes and orders two engines only when every one of them agreed on the
+direction, a paired sign test rather than the 1.25x threshold the old caveat
+pointed at. `bench/arena.ts` runs that protocol: the parent measures the reads
+axis, which is a count and cannot come out differently, and hands the clock to
+fresh processes that do nothing else.
+
+Nothing about this store changed, and no read moved: the competitive ratios are
+the same figures they were, because they were never the noisy kind. What changed
+is what the clock is allowed to claim, and two things came out of it that a
+single-process table could not have supported:
+
+- The mutation table carries the spread between processes beside each rate, and
+  the harness orders 27 of the 28 pairs in it.
+- The pair it refuses is this package against itself. The eager arm and the
+  default differ by 4,968 field reads at sixteen mutations per query, which is
+  exact, and by a clock gap that went the other way in one process out of seven,
+  which is not a result at all.
+
 ## 0.1.3
 
 The skewed-column figures said "the coldest 0.04%", and 0.04% is not the coldest

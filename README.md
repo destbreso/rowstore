@@ -54,19 +54,23 @@ Against the incumbent, on the axis where the harness found the most loss
 available. This is `churn/m=16`: 5,000 rows, 200 equality queries, and sixteen
 insert-and-remove pairs between each of them, so 6,400 mutations in all.
 
-| engine | field reads | queries/s |
-|---|---:|---:|
-| `rowstore`, eager | 11,400 | 152,745 |
-| `rowstore`, default | 16,368 | 139,235 |
-| `lokijs`, index maintained incrementally | 291,388 | 7,029 |
-| `lokijs`, index rebuilt when invalidated | 21,981,027 | 383 |
-| `lokijs`, no index declared | 1,000,000 | 12,509 |
-| `Array.prototype.filter` | 1,000,000 | 18,689 |
+| engine | field reads | queries/s | run to run |
+|---|---:|---:|---:|
+| `rowstore`, eager | 11,400 | 158,249 | +/- 23.9% |
+| `rowstore`, default | 16,368 | 138,237 | +/- 4.6% |
+| `lokijs`, index maintained incrementally | 291,388 | 6,944 | +/- 1.8% |
+| `lokijs`, index rebuilt when invalidated | 21,981,027 | 387 | +/- 0.6% |
+| `lokijs`, no index declared | 1,000,000 | 12,978 | +/- 2.6% |
+| `Array.prototype.filter` | 1,000,000 | 18,769 | +/- 4.7% |
 
 11,400 is also the offline optimum for that workload, so under mutation the
 eager arm pays exactly what perfect foresight pays. Reads are exact and
-reproducible from the seed; the throughput column is one machine's, and the
-harness's own advice is to disbelieve any throughput gap under 1.25x.
+reproducible from the seed. The clock column is a median over seven separate
+processes, with the spread between them beside it, and the harness orders two
+engines only when every one of those processes agreed on the direction. It
+orders 27 of the 28 pairs in that table. The one it refuses is the two
+`rowstore` arms against each other: the reads separate them by 4,968 and the
+clock does not separate them at all.
 
 ![Field reads under mutation, log scale: rowstore at 11,400 against 291,388 for an incrementally maintained lokijs index and 21,981,027 for one rebuilt on invalidation](https://raw.githubusercontent.com/destbreso/rowstore/main/assets/mutation.svg)
 

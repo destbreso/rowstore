@@ -1,6 +1,10 @@
 # rowstore, measured by rowtoll
 
-Node v22.14.0 on darwin/arm64, scale 0.25, 5 trials per subject, seed 12345, index-search cap 2.
+Node v22.14.0 on darwin/arm64 (Apple M4, 10 cores, 24 GB), scale 0.25, seed 12345, index-search cap 2, data fingerprint `285d7fd0`.
+
+Timing: 5 trials per engine in each of 7 independent processes, arms interleaved inside every round.
+
+The machine, measured while it worked: a fixed two-million-row scan, read once before every workload, ran at 893 million row visits per second. It moved 17.7% inside a single replicate, a replicate ended 1.5% faster than it started, and +/- 0.7% separates one replicate from another. That last figure is the floor: a clock gap smaller than it is the room, not the engine.
 
 
 
@@ -87,18 +91,59 @@ is against perfect foresight rather than against a plausible guess.
 
 **Timing is separate and never mixes with counting.** Accessors are slower than
 data properties and change what the JIT can assume, so throughput is measured on
-the plain copy, arms interleaved, reported as a median with its interquartile
-range. There is no warmup constant, because a declared warmup is a claim about
-how long an engine takes to settle and a claim needs an instrument: the first
-trial is printed next to the median instead.
+the plain copy, arms interleaved inside every round. There is no warmup constant,
+because a declared warmup is a claim about how long an engine takes to settle and
+a claim needs an instrument: the first trial is printed next to the median
+instead.
 
-**The printed IQR understates the uncertainty, by a measured amount.** It is the
-spread WITHIN one measurement. Repeating the whole seven-trial measurement eight
-times on the machine that produced this report moved the median by 20.9% for
-Array.filter and 3.7% for sift, against printed interquartile ranges of 4.6%
-and 1.9%. So the interval covers run-to-run movement in neither case, and a
-throughput difference under roughly 1.25x is not a result. The reads axis has no
-such problem: it is exactly reproducible, byte for byte, from the seed.
+**The clock is repeated in separate processes, and the counting is not.** A
+count is a function of the seed, so running it again reproduces it; repeating it
+would measure nothing. A clock figure is not, and the spread inside one
+measurement is the most flattering dispersion available for it: on the machine
+that produced this report, repeating a whole seven-trial measurement eight times
+moved the median by 20.9% against a printed interquartile range of 4.6%. So the
+two are separate columns. **Run to run** is half the range of the per-process
+medians, over their median, and it is the one to read as uncertainty. **IQR
+within a run** is the old number, kept because a large gap between them says the
+machine, not the engine, is what moved. A single-process run prints `n=1` in
+the first column rather than a zero, because an uncertainty that was not measured
+is absent, not small.
+
+Each replicate is a fresh process that times and does nothing else. It does not
+repeat the index search or the toll pass, which is deliberate past saving the
+minutes: the toll pass hands every engine rows whose fields are accessors, and
+doing it first leaves the JIT holding inline caches for exactly the code about to
+be timed on a different shape.
+
+**Two engines are ordered by a paired sign test, not by a threshold.** Arms
+measured inside the same replicate share that replicate's mood, so the sign of
+the difference is the part that survives it, and the sign needs no assumption
+about the distribution: under the null that two engines are the same speed each
+replicate is a coin flip, and agreement across all `k` of them has
+`p = 2^(1-k)`. Unanimity is the whole rule. An engine that lost even once has
+not been shown to be faster, whatever the medians look like. Each throughput
+table says how many of its pairs the replicates order, names the ones they do
+not, and states how many orderings a table of that size gets by luck at that
+replicate count.
+
+The rule replaced a constant, and the constant is why it needed replacing. This
+report used to say that a throughput gap under roughly 1.25x was not a result, a
+figure taken from repeating one measurement eight times. Then three whole runs of
+this panel on one machine put a single pairing at 1.6x one way, 1.8x the other
+and 1.5x back, every one of them past that constant, while the reads on it came
+out identical to the read all three times. A threshold cannot express that, and
+it is wrong in the other direction too: a difference of a few percent that every
+process agreed on is a result, and a much larger one they disagreed about is not.
+Which of those a pair is cannot be read off its size, which is exactly why the
+tables print the split rather than a verdict.
+
+**The machine is part of the measurement, so it is printed.** The header carries
+the CPU, the core count and the memory, plus a calibrator: a fixed scan of two
+million plain rows, run before and after every replicate. Its rate is a unit a
+figure can be divided by to survive the trip to another machine; the gap between
+its before and after says whether the machine changed speed while the replicate
+ran; and its own spread across replicates is the smallest difference this
+environment can resolve at all.
 
 ## What this harness found before anyone ran it
 
@@ -121,19 +166,22 @@ moment a workload repeats itself at all.
 engine with its best index declared against the same engine with nothing
 declared, and widen a range until it keeps the whole collection. The reads
 advantage decays from 2.11x to 1.38x, which is exact and reproducible from the
-seed. The clock advantage decays faster and lands on nothing: about 1.8x at the
-narrow end and 1.00x at the wide one, across runs of this panel. At the top of that
-sweep the index still saves a quarter of the reads and buys no speed at all,
-because a sorted index hands back positions in value order and the residual
-filter then walks the rows in random order while a scan walks them sequentially.
+seed. The clock advantage decays faster and runs out first: it starts near 1.8x,
+and by the top of the sweep the replicates no longer agree on which of the two is
+even faster. So the index ends that sweep saving better than a quarter of the
+reads and buying no speed this instrument can find, because a sorted index hands
+back positions in value order and the residual filter then walks the rows in
+random order while a scan walks them sequentially.
 
-Under mutation the disagreement changes sign outright. At sixteen mutations per
+Under mutation the two axes name different winners. At sixteen mutations per
 query the incrementally maintained index reads 5.5x less than the same library
-with no index, and answers fewer queries per second than it, by 1.4x to 1.6x
-depending on the run, because splicing into a sorted array is memory traffic that
-touches no field at all. A harness that reported one number per workload would
-have to pick which of those to believe, and picking is not neutral. Both are
-printed.
+with no index, identically on every run from this seed, because splicing into a
+sorted array is memory traffic that touches no field at all. On the clock it is
+the slower of the two, in every replicate. Neither figure is wrong and neither
+one is the answer on its own. A harness reporting one number per workload would
+have to pick which to believe, and picking is not neutral. Both are printed, and
+where one of them has nothing to say, the table says so instead of filling the
+cell.
 
 Where the real losses live is mutation. An engine that invalidates its index and
 rebuilds on the next query is two orders of magnitude slower than having no index
@@ -167,16 +215,18 @@ Best index set: none. Searched 1 of 4 candidate sets (the rest could not win on 
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 1,147 | 876 | 1,966 | 7.39 |
-| sift | 367 | 70 | 390 | 7.51 |
-| mingo | 160 | 34 | 137 | 6.67 |
-| lokijs (no index) | 2,132 | 392 | 1,979 | 9.70 |
-| lokijs | 2,234 | 252 | 2,092 | 10.09 |
-| lokijs (adaptive) | 2,744 | 769 | 2,936 | 10.46 |
-| rowstore | 921 | 483 | 442 | 1.28 |
-| rowstore (eager) | 631 | 78 | 680 | 1.20 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 761 | +/- 25.8% | 70.3% | 452 | 6.44 |
+| sift | 174 | +/- 16.9% | 41.4% | 130 | 6.22 |
+| mingo | 174 | +/- 4.4% | 11.5% | 122 | 6.26 |
+| lokijs (no index) | 2,680 | +/- 10.5% | 57.7% | 838 | 9.09 |
+| lokijs | 2,933 | +/- 12.6% | 23.1% | 1,671 | 9.55 |
+| lokijs (adaptive) | 2,798 | +/- 8.5% | 6.4% | 1,469 | 9.35 |
+| rowstore | 377 | +/- 12.6% | 24.6% | 202 | 0.98 |
+| rowstore (eager) | 522 | +/- 18.6% | 35.5% | 287 | 0.93 |
+
+> The clock orders 23 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `sift` and `mingo` (3 of 7, median 1.00x), `lokijs (no index)` and `lokijs (adaptive)` (2 of 7, median 0.95x), `lokijs` and `lokijs (adaptive)` (5 of 7, median 1.03x), `lokijs (no index)` and `lokijs` (1 of 7, median 0.91x), `rowstore` and `rowstore (eager)` (1 of 7, median 0.70x).
 
 ### amortize/r=2
 
@@ -203,16 +253,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 1,689 | 890 | 1,085 | 6.43 |
-| sift | 391 | 26 | 358 | 7.34 |
-| mingo | 187 | 23 | 187 | 7.25 |
-| lokijs (no index) | 2,289 | 935 | 1,538 | 9.30 |
-| lokijs | 37,066 | 11,132 | 28,538 | 22.81 |
-| lokijs (adaptive) | 42,667 | 6,524 | 8,479 | 22.24 |
-| rowstore | 550 | 239 | 365 | 1.28 |
-| rowstore (eager) | 1,248 | 251 | 621 | 1.22 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 1,760 | +/- 29.0% | 68.6% | 1,072 | 6.80 |
+| sift | 337 | +/- 9.6% | 13.5% | 284 | 6.82 |
+| mingo | 197 | +/- 6.9% | 5.5% | 184 | 6.89 |
+| lokijs (no index) | 3,551 | +/- 10.3% | 64.9% | 4,390 | 8.69 |
+| lokijs | 28,605 | +/- 32.6% | 35.3% | 6,233 | 19.41 |
+| lokijs (adaptive) | 31,517 | +/- 18.1% | 47.4% | 20,806 | 19.17 |
+| rowstore | 639 | +/- 17.3% | 23.7% | 524 | 0.80 |
+| rowstore (eager) | 1,051 | +/- 12.8% | 24.2% | 1,276 | 0.80 |
+
+> The clock orders 26 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (3 of 7, median 0.96x), `Array.filter` and `rowstore (eager)` (6 of 7, median 1.67x).
 
 ### amortize/r=8
 
@@ -239,16 +291,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 2,281 | 551 | 1,739 | 7.67 |
-| sift | 340 | 7 | 341 | 7.43 |
-| mingo | 225 | 10 | 225 | 6.93 |
-| lokijs (no index) | 3,069 | 435 | 2,660 | 9.48 |
-| lokijs | 117,864 | 48,797 | 117,864 | 22.06 |
-| lokijs (adaptive) | 123,000 | 43,166 | 105,901 | 22.27 |
-| rowstore | 2,029 | 916 | 3,658 | 1.33 |
-| rowstore (eager) | 4,861 | 1,333 | 6,129 | 1.17 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 3,903 | +/- 14.1% | 32.9% | 3,752 | 6.69 |
+| sift | 399 | +/- 8.4% | 3.9% | 412 | 6.89 |
+| mingo | 228 | +/- 2.9% | 2.3% | 232 | 6.19 |
+| lokijs (no index) | 5,299 | +/- 8.2% | 12.2% | 5,841 | 8.30 |
+| lokijs | 86,214 | +/- 15.5% | 55.3% | 56,404 | 19.22 |
+| lokijs (adaptive) | 82,509 | +/- 35.0% | 53.3% | 59,944 | 18.53 |
+| rowstore | 2,991 | +/- 7.7% | 30.0% | 2,229 | 0.79 |
+| rowstore (eager) | 4,458 | +/- 15.8% | 21.3% | 4,358 | 0.80 |
+
+> The clock orders 25 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (5 of 7, median 1.05x), `lokijs (no index)` and `rowstore (eager)` (6 of 7, median 1.10x), `Array.filter` and `rowstore (eager)` (1 of 7, median 0.85x).
 
 ### amortize/r=64
 
@@ -275,16 +329,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 3,151 | 520 | 3,441 | 6.45 |
-| sift | 383 | 1 | 384 | 7.69 |
-| mingo | 234 | 6 | 234 | 7.58 |
-| lokijs (no index) | 3,656 | 20 | 3,671 | 10.67 |
-| lokijs | 181,840 | 37,210 | 199,351 | 22.34 |
-| lokijs (adaptive) | 166,342 | 46,418 | 160,034 | 22.05 |
-| rowstore | 20,744 | 7,704 | 24,606 | 1.04 |
-| rowstore (eager) | 35,030 | 1,526 | 36,572 | 1.10 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 4,544 | +/- 4.5% | 3.4% | 4,362 | 6.07 |
+| sift | 428 | +/- 2.9% | 1.7% | 414 | 6.08 |
+| mingo | 241 | +/- 1.8% | 0.7% | 240 | 6.52 |
+| lokijs (no index) | 6,726 | +/- 8.5% | 14.6% | 6,500 | 8.77 |
+| lokijs | 209,980 | +/- 8.4% | 8.8% | 201,258 | 19.21 |
+| lokijs (adaptive) | 208,299 | +/- 14.1% | 28.8% | 229,390 | 18.84 |
+| rowstore | 20,129 | +/- 15.6% | 28.3% | 20,129 | 0.81 |
+| rowstore (eager) | 30,397 | +/- 16.7% | 3.9% | 27,669 | 0.80 |
+
+> The clock orders 27 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (3 of 7, median 0.98x).
 
 ### select-eq/s=1/N
 
@@ -311,16 +367,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 19,120 | 988 | 19,276 | 1.46 |
-| sift | 1,899 | 169 | 1,739 | 1.39 |
-| mingo | 1,173 | 24 | 1,159 | 1.40 |
-| lokijs (no index) | 23,142 | 165 | 23,114 | 1.92 |
-| lokijs | 738,459 | 55,242 | 652,705 | 4.52 |
-| lokijs (adaptive) | 703,091 | 82,957 | 587,300 | 4.64 |
-| rowstore | 356,347 | 43,032 | 317,167 | 0.23 |
-| rowstore (eager) | 481,251 | 76,776 | 481,251 | 0.19 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 29,911 | +/- 2.3% | 2.7% | 30,135 | 1.22 |
+| sift | 2,162 | +/- 1.6% | 1.0% | 2,160 | 1.21 |
+| mingo | 1,194 | +/- 1.8% | 0.7% | 1,190 | 1.24 |
+| lokijs (no index) | 49,245 | +/- 3.7% | 3.0% | 47,806 | 1.56 |
+| lokijs | 742,460 | +/- 7.8% | 20.2% | 594,133 | 4.01 |
+| lokijs (adaptive) | 834,490 | +/- 3.4% | 21.1% | 676,247 | 3.86 |
+| rowstore | 353,019 | +/- 9.8% | 5.8% | 352,242 | 0.16 |
+| rowstore (eager) | 490,948 | +/- 4.6% | 11.2% | 483,627 | 0.14 |
+
+> The clock orders 28 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It orders every pair in it.
 
 ### select-eq/s=0.001
 
@@ -347,16 +405,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 21,627 | 435 | 18,806 | 1.28 |
-| sift | 1,909 | 10 | 1,906 | 1.22 |
-| mingo | 1,184 | 15 | 1,179 | 1.28 |
-| lokijs (no index) | 27,066 | 890 | 31,602 | 1.80 |
-| lokijs | 810,127 | 45,688 | 733,719 | 4.22 |
-| lokijs (adaptive) | 809,035 | 87,962 | 700,933 | 4.35 |
-| rowstore | 388,318 | 26,890 | 371,517 | 0.18 |
-| rowstore (eager) | 579,359 | 22,766 | 549,198 | 0.18 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 31,962 | +/- 1.5% | 1.6% | 26,854 | 1.21 |
+| sift | 2,201 | +/- 2.2% | 0.9% | 2,131 | 1.19 |
+| mingo | 1,191 | +/- 1.5% | 1.0% | 1,189 | 1.26 |
+| lokijs (no index) | 45,711 | +/- 2.1% | 2.2% | 44,291 | 1.58 |
+| lokijs | 816,743 | +/- 4.1% | 4.1% | 806,991 | 3.67 |
+| lokijs (adaptive) | 861,605 | +/- 5.9% | 6.4% | 862,068 | 3.71 |
+| rowstore | 397,483 | +/- 1.9% | 3.3% | 386,972 | 0.16 |
+| rowstore (eager) | 574,093 | +/- 3.6% | 6.4% | 524,362 | 0.14 |
+
+> The clock orders 28 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It orders every pair in it.
 
 ### select-eq/s=0.05
 
@@ -383,16 +443,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 13,375 | 915 | 13,343 | 1.29 |
-| sift | 2,082 | 12 | 2,103 | 1.27 |
-| mingo | 1,184 | 8 | 1,195 | 1.36 |
-| lokijs (no index) | 15,827 | 708 | 15,401 | 1.75 |
-| lokijs | 165,574 | 8,644 | 169,300 | 3.17 |
-| lokijs (adaptive) | 160,133 | 16,403 | 110,193 | 3.27 |
-| rowstore | 87,343 | 4,614 | 87,343 | 0.19 |
-| rowstore (eager) | 101,881 | 4,970 | 113,526 | 0.19 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 23,556 | +/- 2.4% | 3.1% | 23,476 | 1.20 |
+| sift | 2,120 | +/- 2.2% | 1.8% | 2,095 | 1.19 |
+| mingo | 1,189 | +/- 1.4% | 1.0% | 1,190 | 1.23 |
+| lokijs (no index) | 33,824 | +/- 5.1% | 4.4% | 34,206 | 1.58 |
+| lokijs | 215,624 | +/- 13.2% | 5.1% | 217,687 | 2.80 |
+| lokijs (adaptive) | 215,083 | +/- 18.2% | 4.3% | 215,827 | 2.81 |
+| rowstore | 88,687 | +/- 8.2% | 9.9% | 90,109 | 0.16 |
+| rowstore (eager) | 103,984 | +/- 10.1% | 6.7% | 118,718 | 0.16 |
+
+> The clock orders 27 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (4 of 7, median 1.00x).
 
 ### select-eq/s=0.25
 
@@ -419,16 +481,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 15,760 | 789 | 14,671 | 1.38 |
-| sift | 2,145 | 21 | 2,126 | 1.29 |
-| mingo | 1,203 | 10 | 1,211 | 1.29 |
-| lokijs (no index) | 17,347 | 1,494 | 17,347 | 2.16 |
-| lokijs | 39,541 | 1,148 | 40,686 | 2.67 |
-| lokijs (adaptive) | 40,596 | 672 | 41,390 | 2.66 |
-| rowstore | 27,340 | 1,238 | 27,340 | 0.21 |
-| rowstore (eager) | 27,967 | 97 | 27,967 | 0.21 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 23,289 | +/- 5.1% | 3.4% | 23,917 | 1.23 |
+| sift | 2,185 | +/- 3.2% | 1.4% | 2,139 | 1.21 |
+| mingo | 1,224 | +/- 2.5% | 1.8% | 1,244 | 1.25 |
+| lokijs (no index) | 29,549 | +/- 3.0% | 5.5% | 29,549 | 1.56 |
+| lokijs | 58,106 | +/- 1.7% | 3.0% | 58,945 | 2.51 |
+| lokijs (adaptive) | 57,776 | +/- 5.4% | 3.9% | 58,272 | 2.34 |
+| rowstore | 26,961 | +/- 6.4% | 2.2% | 27,130 | 0.18 |
+| rowstore (eager) | 28,263 | +/- 6.6% | 1.5% | 29,760 | 0.17 |
+
+> The clock orders 27 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (4 of 7, median 1.01x).
 
 ### select-eq/s=0.5
 
@@ -455,16 +519,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 12,040 | 1,064 | 13,090 | 1.37 |
-| sift | 2,143 | 69 | 2,170 | 1.35 |
-| mingo | 1,188 | 432 | 1,233 | 1.30 |
-| lokijs (no index) | 12,282 | 879 | 12,158 | 1.99 |
-| lokijs | 20,885 | 1,264 | 21,568 | 2.80 |
-| lokijs (adaptive) | 21,384 | 2,612 | 21,752 | 2.78 |
-| rowstore | 14,193 | 475 | 14,744 | 0.23 |
-| rowstore (eager) | 13,161 | 2,225 | 14,841 | 0.22 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 20,112 | +/- 6.8% | 5.5% | 17,221 | 1.25 |
+| sift | 2,220 | +/- 2.6% | 1.1% | 2,158 | 1.22 |
+| mingo | 1,263 | +/- 3.2% | 1.4% | 1,049 | 1.23 |
+| lokijs (no index) | 24,412 | +/- 7.1% | 2.9% | 21,734 | 1.56 |
+| lokijs | 32,189 | +/- 3.6% | 1.0% | 30,056 | 2.10 |
+| lokijs (adaptive) | 32,141 | +/- 0.6% | 2.6% | 29,880 | 2.07 |
+| rowstore | 14,422 | +/- 2.5% | 1.9% | 13,474 | 0.18 |
+| rowstore (eager) | 14,634 | +/- 1.4% | 2.0% | 13,000 | 0.19 |
+
+> The clock orders 27 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (5 of 7, median 1.00x).
 
 ### select-eq/s=1
 
@@ -491,16 +557,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 14,559 | 224 | 14,350 | 1.30 |
-| sift | 2,338 | 18 | 2,299 | 1.30 |
-| mingo | 1,361 | 11 | 1,367 | 1.30 |
-| lokijs (no index) | 13,278 | 329 | 13,278 | 1.89 |
-| lokijs | 11,308 | 469 | 11,512 | 1.86 |
-| lokijs (adaptive) | 11,279 | 296 | 11,501 | 1.96 |
-| rowstore | 6,397 | 136 | 6,508 | 0.24 |
-| rowstore (eager) | 6,636 | 328 | 6,745 | 0.18 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 22,852 | +/- 3.5% | 10.1% | 19,678 | 1.22 |
+| sift | 2,475 | +/- 1.5% | 0.7% | 2,482 | 1.24 |
+| mingo | 1,418 | +/- 2.8% | 1.2% | 1,428 | 1.25 |
+| lokijs (no index) | 20,304 | +/- 1.2% | 1.8% | 19,895 | 1.58 |
+| lokijs | 16,951 | +/- 2.2% | 2.0% | 16,940 | 1.70 |
+| lokijs (adaptive) | 17,029 | +/- 0.8% | 1.6% | 17,081 | 1.67 |
+| rowstore | 6,409 | +/- 4.4% | 6.2% | 6,055 | 0.19 |
+| rowstore (eager) | 6,484 | +/- 4.5% | 3.5% | 6,631 | 0.15 |
+
+> The clock orders 26 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (4 of 7, median 1.00x), `rowstore` and `rowstore (eager)` (1 of 7, median 0.99x).
 
 ### select-rng/keep=5%
 
@@ -527,16 +595,18 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 13,374 | 148 | 13,374 | 1.26 |
-| sift | 892 | 13 | 882 | 1.24 |
-| mingo | 631 | 11 | 621 | 1.31 |
-| lokijs (no index) | 9,332 | 133 | 9,175 | 1.95 |
-| lokijs | 17,235 | 546 | 17,846 | 3.85 |
-| lokijs (adaptive) | 17,558 | 541 | 17,064 | 3.81 |
-| rowstore | 5,871 | 25 | 5,811 | 0.22 |
-| rowstore (eager) | 6,039 | 198 | 6,216 | 0.19 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 14,201 | +/- 2.3% | 1.5% | 11,929 | 1.19 |
+| sift | 983 | +/- 2.5% | 2.1% | 830 | 1.23 |
+| mingo | 644 | +/- 2.5% | 1.5% | 586 | 1.25 |
+| lokijs (no index) | 9,399 | +/- 2.5% | 4.2% | 8,032 | 1.77 |
+| lokijs | 17,432 | +/- 4.6% | 3.6% | 13,474 | 3.87 |
+| lokijs (adaptive) | 17,642 | +/- 2.6% | 2.1% | 17,091 | 3.61 |
+| rowstore | 5,901 | +/- 2.1% | 3.5% | 5,156 | 0.21 |
+| rowstore (eager) | 6,111 | +/- 6.7% | 3.6% | 5,867 | 0.17 |
+
+> The clock orders 26 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (1 of 7, median 0.99x), `rowstore` and `rowstore (eager)` (1 of 7, median 0.98x).
 
 ### select-rng/keep=20%
 
@@ -563,16 +633,18 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 10,385 | 252 | 10,602 | 1.26 |
-| sift | 904 | 10 | 898 | 1.27 |
-| mingo | 571 | 5 | 572 | 1.33 |
-| lokijs (no index) | 7,345 | 380 | 7,189 | 1.94 |
-| lokijs | 12,006 | 218 | 11,215 | 3.80 |
-| lokijs (adaptive) | 11,912 | 509 | 12,254 | 3.68 |
-| rowstore | 4,379 | 1,267 | 4,395 | 0.25 |
-| rowstore (eager) | 4,431 | 481 | 4,685 | 0.25 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 11,440 | +/- 1.0% | 1.7% | 11,379 | 1.23 |
+| sift | 980 | +/- 1.4% | 1.6% | 997 | 1.19 |
+| mingo | 564 | +/- 2.0% | 0.7% | 563 | 1.25 |
+| lokijs (no index) | 7,635 | +/- 1.3% | 2.1% | 7,707 | 1.64 |
+| lokijs | 12,288 | +/- 1.0% | 1.9% | 12,424 | 3.61 |
+| lokijs (adaptive) | 12,165 | +/- 1.8% | 1.3% | 11,679 | 3.58 |
+| rowstore | 4,497 | +/- 2.4% | 3.3% | 3,430 | 0.19 |
+| rowstore (eager) | 4,607 | +/- 3.1% | 2.3% | 3,572 | 0.16 |
+
+> The clock orders 26 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (3 of 7, median 1.00x), `rowstore` and `rowstore (eager)` (1 of 7, median 0.98x).
 
 ### select-rng/keep=45%
 
@@ -599,16 +671,18 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 8,761 | 1,061 | 9,588 | 1.30 |
-| sift | 909 | 9 | 909 | 1.29 |
-| mingo | 479 | 6 | 474 | 1.32 |
-| lokijs (no index) | 6,065 | 303 | 5,695 | 1.88 |
-| lokijs | 8,320 | 159 | 8,190 | 3.87 |
-| lokijs (adaptive) | 8,009 | 297 | 7,935 | 3.93 |
-| rowstore | 3,038 | 207 | 3,038 | 0.23 |
-| rowstore (eager) | 3,228 | 98 | 3,193 | 0.30 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 9,629 | +/- 2.4% | 2.5% | 9,475 | 1.23 |
+| sift | 968 | +/- 1.4% | 0.7% | 972 | 1.21 |
+| mingo | 480 | +/- 2.0% | 0.7% | 470 | 1.26 |
+| lokijs (no index) | 6,185 | +/- 2.7% | 1.6% | 6,276 | 1.68 |
+| lokijs | 8,479 | +/- 0.7% | 1.4% | 8,310 | 3.61 |
+| lokijs (adaptive) | 8,490 | +/- 1.6% | 2.0% | 8,363 | 3.58 |
+| rowstore | 3,257 | +/- 2.6% | 1.4% | 2,910 | 0.20 |
+| rowstore (eager) | 3,285 | +/- 2.1% | 1.4% | 3,144 | 0.16 |
+
+> The clock orders 27 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (1 of 7, median 1.00x).
 
 ### select-rng/keep=60%
 
@@ -635,16 +709,18 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 9,015 | 710 | 9,231 | 1.24 |
-| sift | 912 | 3 | 912 | 1.27 |
-| mingo | 440 | 7 | 429 | 1.30 |
-| lokijs (no index) | 5,658 | 131 | 5,658 | 1.86 |
-| lokijs | 6,806 | 124 | 6,689 | 3.80 |
-| lokijs (adaptive) | 6,899 | 97 | 6,805 | 3.74 |
-| rowstore | 2,812 | 31 | 2,812 | 0.23 |
-| rowstore (eager) | 2,863 | 117 | 3,012 | 0.18 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 9,356 | +/- 2.5% | 1.6% | 8,620 | 1.22 |
+| sift | 967 | +/- 1.4% | 1.1% | 952 | 1.22 |
+| mingo | 443 | +/- 0.7% | 1.0% | 445 | 1.24 |
+| lokijs (no index) | 5,794 | +/- 1.7% | 1.2% | 5,794 | 1.64 |
+| lokijs | 7,098 | +/- 2.2% | 1.8% | 7,268 | 3.63 |
+| lokijs (adaptive) | 7,060 | +/- 1.5% | 1.4% | 7,266 | 3.53 |
+| rowstore | 2,922 | +/- 2.4% | 1.7% | 2,917 | 0.21 |
+| rowstore (eager) | 2,981 | +/- 2.1% | 1.6% | 2,995 | 0.16 |
+
+> The clock orders 27 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (3 of 7, median 1.00x).
 
 ### select-rng/keep=100%
 
@@ -671,16 +747,18 @@ Best index set: active:hash, score:sorted. Searched 5 of 7 candidate sets (the r
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 8,363 | 93 | 8,509 | 1.26 |
-| sift | 907 | 11 | 925 | 1.34 |
-| mingo | 362 | 4 | 358 | 1.31 |
-| lokijs (no index) | 4,748 | 81 | 4,639 | 1.86 |
-| lokijs | 4,831 | 77 | 4,831 | 3.74 |
-| lokijs (adaptive) | 4,855 | 7 | 4,855 | 3.89 |
-| rowstore | 2,752 | 12 | 2,759 | 0.21 |
-| rowstore (eager) | 2,919 | 123 | 3,025 | 0.18 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 8,726 | +/- 1.4% | 1.8% | 8,209 | 1.20 |
+| sift | 982 | +/- 1.0% | 1.1% | 930 | 1.21 |
+| mingo | 362 | +/- 1.9% | 1.1% | 360 | 1.26 |
+| lokijs (no index) | 4,856 | +/- 1.7% | 1.4% | 4,822 | 1.66 |
+| lokijs | 5,038 | +/- 2.8% | 1.4% | 5,038 | 3.54 |
+| lokijs (adaptive) | 5,010 | +/- 1.3% | 1.8% | 5,049 | 3.60 |
+| rowstore | 2,789 | +/- 5.3% | 7.1% | 2,656 | 0.21 |
+| rowstore (eager) | 2,961 | +/- 3.3% | 5.3% | 3,034 | 0.16 |
+
+> The clock orders 26 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (5 of 7, median 1.01x), `rowstore` and `rowstore (eager)` (1 of 7, median 0.95x).
 
 ### churn/m=0
 
@@ -707,16 +785,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 13,802 | 988 | 13,643 | 1.25 |
-| sift | 2,046 | 11 | 2,036 | 1.26 |
-| mingo | 1,158 | 17 | 1,148 | 1.29 |
-| lokijs (no index) | 17,182 | 376 | 15,952 | 1.73 |
-| lokijs | 574,713 | 5,543 | 574,713 | 4.46 |
-| lokijs (adaptive) | 600,827 | 23,527 | 580,410 | 4.45 |
-| rowstore | 361,446 | 28,806 | 362,510 | 0.20 |
-| rowstore (eager) | 518,807 | 60,585 | 530,211 | 0.19 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 20,225 | +/- 2.2% | 3.1% | 20,404 | 1.21 |
+| sift | 2,124 | +/- 1.0% | 0.8% | 2,139 | 1.20 |
+| mingo | 1,159 | +/- 1.9% | 0.8% | 1,168 | 1.25 |
+| lokijs (no index) | 18,159 | +/- 3.5% | 1.4% | 18,534 | 1.62 |
+| lokijs | 617,600 | +/- 1.2% | 2.9% | 631,746 | 4.14 |
+| lokijs (adaptive) | 643,517 | +/- 2.7% | 2.3% | 622,649 | 4.11 |
+| rowstore | 363,306 | +/- 2.8% | 2.8% | 357,569 | 0.16 |
+| rowstore (eager) | 530,269 | +/- 14.0% | 9.0% | 530,269 | 0.14 |
+
+> The clock orders 28 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It orders every pair in it.
 
 ### churn/m=1
 
@@ -743,16 +823,18 @@ Best index set: key:hash. Searched 3 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 18,707 | 198 | 18,619 | 1.30 |
-| sift | 2,036 | 37 | 2,039 | 1.25 |
-| mingo | 1,145 | 12 | 1,145 | 1.59 |
-| lokijs (no index) | 16,303 | 552 | 15,233 | 1.80 |
-| lokijs | 388 | 4 | 388 | 4.98 |
-| lokijs (adaptive) | 88,497 | 4,490 | 88,497 | 4.49 |
-| rowstore | 259,839 | 128,962 | 318,598 | 0.22 |
-| rowstore (eager) | 370,542 | 52,941 | 405,235 | 0.22 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 19,743 | +/- 4.1% | 8.8% | 17,457 | 1.25 |
+| sift | 2,113 | +/- 0.9% | 1.2% | 2,098 | 1.23 |
+| mingo | 1,151 | +/- 2.6% | 1.3% | 1,165 | 1.24 |
+| lokijs (no index) | 17,293 | +/- 1.5% | 2.1% | 16,869 | 1.71 |
+| lokijs | 391 | +/- 0.3% | 0.5% | 391 | 4.34 |
+| lokijs (adaptive) | 87,665 | +/- 4.2% | 4.8% | 41,642 | 4.59 |
+| rowstore | 267,394 | +/- 5.9% | 7.8% | 195,870 | 0.19 |
+| rowstore (eager) | 361,718 | +/- 14.5% | 21.3% | 280,948 | 0.18 |
+
+> The clock orders 28 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It orders every pair in it.
 
 ### churn/m=4
 
@@ -779,16 +861,18 @@ Best index set: key:hash. Searched 3 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 18,572 | 978 | 18,037 | 1.34 |
-| sift | 2,039 | 11 | 2,028 | 1.30 |
-| mingo | 1,158 | 12 | 1,158 | 1.28 |
-| lokijs (no index) | 15,337 | 639 | 15,940 | 1.90 |
-| lokijs | 389 | 9 | 380 | 4.51 |
-| lokijs (adaptive) | 27,021 | 381 | 27,030 | 4.73 |
-| rowstore | 252,246 | 25,642 | 253,098 | 0.22 |
-| rowstore (eager) | 334,472 | 40,814 | 298,026 | 0.19 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 19,474 | +/- 3.9% | 3.0% | 18,344 | 1.26 |
+| sift | 2,112 | +/- 1.5% | 1.2% | 2,117 | 1.23 |
+| mingo | 1,158 | +/- 2.1% | 2.1% | 1,135 | 1.24 |
+| lokijs (no index) | 16,223 | +/- 2.5% | 1.8% | 16,857 | 1.62 |
+| lokijs | 391 | +/- 0.8% | 1.1% | 388 | 4.20 |
+| lokijs (adaptive) | 26,740 | +/- 1.7% | 2.7% | 25,755 | 4.19 |
+| rowstore | 257,248 | +/- 10.4% | 8.9% | 216,401 | 0.17 |
+| rowstore (eager) | 329,965 | +/- 12.6% | 10.0% | 255,932 | 0.16 |
+
+> The clock orders 28 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It orders every pair in it.
 
 ### churn/m=16
 
@@ -815,16 +899,18 @@ Best index set: key:hash. Searched 4 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 18,689 | 456 | 16,047 | 1.36 |
-| sift | 2,012 | 15 | 2,002 | 1.24 |
-| mingo | 1,160 | 7 | 1,160 | 1.27 |
-| lokijs (no index) | 12,509 | 199 | 12,432 | 1.76 |
-| lokijs | 383 | 2 | 382 | 4.59 |
-| lokijs (adaptive) | 7,029 | 47 | 6,988 | 5.13 |
-| rowstore | 139,235 | 10,117 | 144,522 | 0.22 |
-| rowstore (eager) | 152,745 | 41,653 | 152,745 | 0.19 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 18,769 | +/- 4.7% | 7.3% | 18,769 | 1.25 |
+| sift | 2,104 | +/- 1.1% | 1.4% | 2,093 | 1.20 |
+| mingo | 1,146 | +/- 1.9% | 0.9% | 1,150 | 1.23 |
+| lokijs (no index) | 12,978 | +/- 2.6% | 1.1% | 12,823 | 1.59 |
+| lokijs | 387 | +/- 0.6% | 0.3% | 380 | 4.43 |
+| lokijs (adaptive) | 6,944 | +/- 1.8% | 1.8% | 6,903 | 4.61 |
+| rowstore | 138,237 | +/- 4.6% | 6.3% | 134,775 | 0.17 |
+| rowstore (eager) | 158,249 | +/- 23.9% | 7.2% | 154,664 | 0.16 |
+
+> The clock orders 27 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `rowstore` and `rowstore (eager)` (1 of 7, median 0.88x).
 
 ### hash-trap
 
@@ -851,20 +937,22 @@ Best index set: score:sorted. Searched 3 of 4 candidate sets (the rest could not
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 14,956 | 930 | 14,466 | 1.61 |
-| sift | 1,382 | 12 | 1,382 | 1.29 |
-| mingo | 680 | 6 | 680 | 1.29 |
-| lokijs (no index) | 9,877 | 739 | 9,492 | 2.01 |
-| lokijs | 19,173 | 748 | 19,529 | 3.28 |
-| lokijs (adaptive) | 19,454 | 258 | 19,454 | 3.56 |
-| rowstore | 7,214 | 235 | 7,214 | 0.26 |
-| rowstore (eager) | 7,495 | 460 | 8,014 | 0.21 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 15,814 | +/- 3.0% | 2.7% | 15,612 | 1.24 |
+| sift | 1,430 | +/- 2.0% | 1.3% | 1,437 | 1.21 |
+| mingo | 685 | +/- 1.4% | 1.0% | 446 | 1.26 |
+| lokijs (no index) | 10,109 | +/- 1.7% | 1.4% | 10,053 | 1.65 |
+| lokijs | 20,061 | +/- 2.1% | 2.7% | 19,435 | 3.19 |
+| lokijs (adaptive) | 20,168 | +/- 1.5% | 1.7% | 19,513 | 2.98 |
+| rowstore | 7,506 | +/- 2.2% | 4.8% | 6,540 | 0.19 |
+| rowstore (eager) | 7,724 | +/- 2.0% | 1.0% | 5,983 | 0.16 |
+
+> The clock orders 27 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (3 of 7, median 0.99x).
 
 ### skew
 
-400 queries alternating the hottest and the coldest value of a Zipf field
+400 queries alternating the hottest value of a Zipf field with a rare one
 
 5,000 rows, 400 queries, 0 mutations.
 True selectivity: median 9.560%, from 0.040% to 19.080%. Empty answers: 0.0%.
@@ -887,16 +975,18 @@ Best index set: topic:hash. Searched 2 of 4 candidate sets (the rest could not w
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 13,841 | 536 | 3,080 | 1.34 |
-| sift | 1,949 | 277 | 845 | 1.30 |
-| mingo | 1,129 | 25 | 1,141 | 1.45 |
-| lokijs (no index) | 13,199 | 830 | 12,857 | 2.10 |
-| lokijs | 64,735 | 4,043 | 62,010 | 4.24 |
-| lokijs (adaptive) | 64,551 | 2,384 | 72,925 | 4.03 |
-| rowstore | 64,644 | 1,081 | 64,176 | 0.27 |
-| rowstore (eager) | 69,755 | 3,582 | 69,227 | 0.23 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 16,210 | +/- 2.8% | 4.1% | 15,858 | 1.29 |
+| sift | 2,104 | +/- 0.9% | 0.6% | 2,104 | 1.20 |
+| mingo | 1,164 | +/- 3.2% | 0.7% | 1,160 | 1.25 |
+| lokijs (no index) | 14,079 | +/- 3.0% | 1.8% | 14,096 | 1.79 |
+| lokijs | 74,386 | +/- 3.4% | 2.5% | 74,794 | 3.73 |
+| lokijs (adaptive) | 74,343 | +/- 2.0% | 3.6% | 72,594 | 3.67 |
+| rowstore | 67,793 | +/- 3.8% | 4.4% | 66,659 | 0.20 |
+| rowstore (eager) | 72,560 | +/- 3.8% | 4.0% | 71,844 | 0.19 |
+
+> The clock orders 27 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (4 of 7, median 1.01x).
 
 ### in-values
 
@@ -923,16 +1013,18 @@ Best index set: key:hash. Searched 2 of 4 candidate sets (the rest could not win
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 13,487 | 583 | 13,398 | 1.42 |
-| sift | 1,334 | 17 | 1,334 | 1.29 |
-| mingo | 704 | 107 | 548 | 1.31 |
-| lokijs (no index) | 9,623 | 331 | 9,874 | 2.09 |
-| lokijs | 46,820 | 1,939 | 46,820 | 4.35 |
-| lokijs (adaptive) | 54,420 | 2,960 | 51,754 | 4.33 |
-| rowstore | 70,975 | 5,914 | 69,099 | 0.24 |
-| rowstore (eager) | 99,161 | 18,937 | 99,161 | 0.24 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 14,374 | +/- 2.7% | 4.8% | 12,809 | 1.22 |
+| sift | 1,337 | +/- 1.7% | 1.1% | 1,311 | 1.20 |
+| mingo | 735 | +/- 2.1% | 1.2% | 713 | 1.26 |
+| lokijs (no index) | 10,340 | +/- 2.1% | 4.8% | 8,808 | 1.61 |
+| lokijs | 50,854 | +/- 6.8% | 11.7% | 37,448 | 3.70 |
+| lokijs (adaptive) | 51,812 | +/- 7.3% | 14.7% | 38,194 | 3.66 |
+| rowstore | 78,668 | +/- 8.1% | 17.2% | 42,780 | 0.17 |
+| rowstore (eager) | 92,807 | +/- 7.3% | 10.7% | 52,182 | 0.16 |
+
+> The clock orders 27 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (3 of 7, median 0.99x).
 
 ### mixed-types
 
@@ -959,16 +1051,18 @@ Best index set: v:hash. Searched 2 of 4 candidate sets (the rest could not win o
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 17,494 | 2,186 | 19,862 | 1.34 |
-| sift | 2,112 | 20 | 2,119 | 1.32 |
-| mingo | 745 | 25 | 745 | 1.35 |
-| lokijs (no index) | 15,116 | 495 | 14,647 | 1.95 |
-| lokijs | - | - | - | WRONG ANSWER: v in [2]: wrong-set, extra 2,7,12,17,22 |
-| lokijs (adaptive) | - | - | - | WRONG ANSWER: v in [2]: wrong-set, extra 2,7,12,17,22 |
-| rowstore | 21,588 | 3,351 | 19,176 | 0.23 |
-| rowstore (eager) | 22,366 | 5,177 | 21,431 | 0.24 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 19,885 | +/- 4.7% | 3.7% | 11,140 | 1.29 |
+| sift | 2,095 | +/- 2.2% | 1.5% | 1,997 | 1.25 |
+| mingo | 764 | +/- 1.6% | 0.9% | 727 | 1.27 |
+| lokijs (no index) | 16,940 | +/- 4.8% | 2.1% | 8,540 | 1.86 |
+| lokijs | - | - | - | - | WRONG ANSWER: v in [2]: wrong-set, extra 2,7,12,17,22 |
+| lokijs (adaptive) | - | - | - | - | WRONG ANSWER: v in [2]: wrong-set, extra 2,7,12,17,22 |
+| rowstore | 21,467 | +/- 10.3% | 6.3% | 8,970 | 0.17 |
+| rowstore (eager) | 24,797 | +/- 9.2% | 11.1% | 11,561 | 0.17 |
+
+> The clock orders 14 of 15 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 15 pairs is expected to order 0.2 of them by luck alone). It does not order `rowstore` and `rowstore (eager)` (1 of 7, median 0.92x).
 
 > lokijs answered a query differently from the oracle: v in [2]: wrong-set, extra 2,7,12,17,22
 
@@ -999,13 +1093,15 @@ Best index set: status:hash. Searched 7 of 22 candidate sets (the rest could not
 
 **Throughput**
 
-| engine | queries/s | IQR | first trial | build ms / why absent |
-| --- | ---: | ---: | ---: | ---: |
-| Array.filter | 9,855 | 354 | 9,549 | 1.84 |
-| sift | 842 | 24 | 835 | 1.77 |
-| mingo | 768 | 50 | 808 | 1.80 |
-| lokijs (no index) | 9,312 | 243 | 9,781 | 2.71 |
-| lokijs | 9,474 | 362 | 9,763 | 5.55 |
-| lokijs (adaptive) | 9,399 | 171 | 9,614 | 5.26 |
-| rowstore | 66,456 | 5,655 | 69,026 | 0.27 |
-| rowstore (eager) | 71,015 | 2,638 | 80,605 | 0.27 |
+| engine | queries/s | run to run | IQR within a run | first trial | build ms / why absent |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Array.filter | 10,807 | +/- 6.9% | 11.2% | 11,545 | 1.72 |
+| sift | 845 | +/- 1.8% | 0.5% | 846 | 1.68 |
+| mingo | 812 | +/- 1.9% | 1.5% | 802 | 1.71 |
+| lokijs (no index) | 9,590 | +/- 1.5% | 3.9% | 9,942 | 2.40 |
+| lokijs | 9,697 | +/- 1.7% | 2.7% | 10,027 | 5.08 |
+| lokijs (adaptive) | 9,735 | +/- 1.8% | 2.3% | 10,041 | 4.97 |
+| rowstore | 70,950 | +/- 6.7% | 4.4% | 65,631 | 0.23 |
+| rowstore (eager) | 76,118 | +/- 7.7% | 9.1% | 70,324 | 0.22 |
+
+> The clock orders 24 of 28 pairs here, unanimously across 7 independent processes (1.6% per pair under the null, so a table of 28 pairs is expected to order 0.4 of them by luck alone). It does not order `lokijs` and `lokijs (adaptive)` (3 of 7, median 1.00x), `lokijs (no index)` and `lokijs (adaptive)` (2 of 7, median 0.99x), `lokijs (no index)` and `lokijs` (1 of 7, median 0.99x), `rowstore` and `rowstore (eager)` (1 of 7, median 0.92x).

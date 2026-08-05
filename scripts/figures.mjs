@@ -228,12 +228,20 @@ const arms = [
   { key: "rebuild", subject: "lokijs", label: "lokijs, rebuilt when invalidated", color: SERIES.red },
   { key: "none", subject: "lokijs (no index)", label: "lokijs, no index declared", color: SERIES.amber },
 ];
+// The last point of the sweep, read off the run rather than typed: it is the
+// one the sentence below is about, and the sweep's top end moves with the scale.
+const hardest = churn[churn.length - 1];
+const eagerAtWorst = cell(hardest, "rowstore (eager)")?.toll?.total ?? 0;
+const optimumAtWorst = hardest?.reference?.total ?? 0;
 write(
   "mutation.svg",
   logBars({
     title: "Keeping an index true through mutation, at one read per index per change",
     subtitle:
-      "Field reads for the whole workload as mutations between queries rise. There is no invalidate-and-rebuild here, because the harness measured what that costs, and no lower bound to reach for either: at m = 16 the eager arm pays 11,400, which is exactly what the offline optimum pays.",
+      "Field reads for the whole workload as mutations between queries rise. There is no invalidate-and-rebuild here, " +
+      "because the harness measured what that costs, and no lower bound to reach for either: at " +
+      `${hardest.workload.replace("churn/m=", "m = ")} the eager arm pays ${eagerAtWorst.toLocaleString("en-US")}, ` +
+      `which is ${eagerAtWorst === optimumAtWorst ? "exactly what the offline optimum pays" : `${(eagerAtWorst / optimumAtWorst).toFixed(2)}x what the offline optimum pays`}.`,
     xLabel: "mutations between queries",
     yLabel: "field reads (log scale)",
     footer: stamp,
