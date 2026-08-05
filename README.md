@@ -8,8 +8,17 @@ predicate shapes come back, builds the access path the moment the arithmetic
 says the loan repays, keeps it correct incrementally through mutations, and
 tells you exactly what it did and why.
 
+Every row carries a numeric `_id`, which is how the store addresses it. A row
+without one, or a second row reusing one, is refused at the door rather than
+quietly overwriting its neighbour.
+
 ```js
 import { RowStore } from "rowstore";
+
+const rows = [
+  { _id: 1, status: "open", score: 120 },
+  { _id: 2, status: "closed", score: 80 },
+];
 
 const store = new RowStore(rows);
 
@@ -186,7 +195,7 @@ survived it.
 read per index per mutation. There is no invalidate-and-rebuild, because the
 harness measured what that costs: on the workload in the table above, a lokijs
 configured that way pays 21,981,027 field reads where this store pays 11,400, and
-answers 383 queries a second where this one answers 152,745.
+answers 387 queries a second where this one answers 158,249.
 
 Change rows **through the store**. An index holds the values it read when it was
 built, so mutating a record in place behind the store's back leaves the index

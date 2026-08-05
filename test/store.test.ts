@@ -280,6 +280,52 @@ describe("the query language refuses what it cannot do", () => {
     const store = new RowStore(rows);
     expect(() => store.insert(rows[0]!)).toThrow(/duplicate/);
   });
+
+  // The constructor used to skip the check `insert` performs, so the same rows
+  // either threw or silently became fewer depending on the door they came in
+  // through, and `find` then disagreed with the oracle before any index
+  // existed. These three pin the two doors to one another.
+  it("refuses a duplicate id in the constructor too, not only in insert", () => {
+    const dup = [
+      { _id: 1, a: "x" },
+      { _id: 1, a: "y" },
+      { _id: 2, a: "x" },
+    ];
+    expect(() => new RowStore(dup)).toThrow(/duplicate/);
+  });
+
+  it("refuses a row with no _id, which would key every row on the same slot", () => {
+    const noId = [{ id: 1, a: "x" }, { id: 2, a: "x" }] as unknown as Row[];
+    expect(() => new RowStore(noId)).toThrow(/_id/);
+    const store = new RowStore();
+    expect(() => store.insert({ a: "x" } as unknown as Row)).toThrow(/_id/);
+  });
+
+  it("rejects through the constructor exactly what it rejects through insert", () => {
+    const bad: Row[] = [
+      { _id: 1, a: "x" },
+      { _id: 1, a: "y" },
+    ];
+    const viaConstructor = (() => {
+      try {
+        new RowStore(bad);
+        return undefined;
+      } catch (e) {
+        return (e as Error).message;
+      }
+    })();
+    const viaInsert = (() => {
+      const store = new RowStore();
+      try {
+        for (const row of bad) store.insert(row);
+        return undefined;
+      } catch (e) {
+        return (e as Error).message;
+      }
+    })();
+    expect(viaConstructor).toBeDefined();
+    expect(viaConstructor).toBe(viaInsert);
+  });
 });
 
 describe("mutation through the store", () => {

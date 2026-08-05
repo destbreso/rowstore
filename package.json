@@ -1,6 +1,6 @@
 {
   "name": "rowstore",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "An in-memory row store that decides its own indexes by watching the queries you actually run. No index declarations, no configuration: it counts predicate shapes, builds an index the moment the arithmetic says it pays, maintains it incrementally through mutations, and tells you what it did and why.",
   "author": {
     "name": "David Estevez",

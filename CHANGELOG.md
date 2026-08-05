@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.5
+
+**A row could be lost on the way in, and the wrong answer came out. Upgrade.**
+
+`insert` refused a duplicate `_id`. The constructor did not, so the identical rows either threw or silently became fewer depending on which door they arrived through:
+
+```js
+const store = new RowStore([
+  { _id: 1, a: "x" },
+  { _id: 1, a: "y" },
+  { _id: 2, a: "x" },
+]);
+store.find({ a: "x" });   // one row, where the oracle says two
+```
+
+Rows with no `_id` at all were worse: they all keyed on `undefined`, so a whole collection collapsed onto its last row. The type says `_id` is required and JavaScript callers do not read types, and the opening example in the README was a JavaScript block that never mentioned `_id`.
+
+This is a package whose thesis is that an index may never change the answer, and the answer was already wrong before any index existed. Both doors now go through one guard, three tests pin them to each other, and the README says what a row is.
+
+**Behavior change.** Input that used to be swallowed now throws. If you were passing rows with duplicate or missing ids, you were getting wrong answers and will now get an error instead.
+
+Also in this release: the mutation paragraph still quoted 383 and 152,745 q/s, from the run before 0.1.4, while the table 130 lines above it said 387 and 158,249. Same measurement, two numbers, one of them fiction. And the committed lockfile pinned `rowtoll` to a symlink into a sibling working directory at a version the manifest did not allow, so `npm ci` failed for everyone who was not the author. It resolves from the registry now.
+
 ## 0.1.4
 
 **The throughput column in the README was one process's opinion, and now it is

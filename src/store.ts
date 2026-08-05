@@ -146,7 +146,32 @@ export class RowStore {
   constructor(rows: Iterable<Row> = [], options: StoreOptions = {}) {
     this.buildAfter = Math.max(1, options.buildAfter ?? 2);
     this.scanOnly = options.scanOnly ?? false;
-    for (const row of rows) this.rows.set(row._id, row);
+    for (const row of rows) this.admit(row);
+  }
+
+  /**
+   * The one door a row comes in through.
+   *
+   * It exists because there were two. `insert` refused a duplicate `_id` and
+   * the constructor did not, so the same three rows either threw or silently
+   * became two depending on which way they arrived, and `find` then answered
+   * with fewer rows than the collection held. In a package whose thesis is that
+   * an index may never change the answer, the answer was already wrong before
+   * any index existed.
+   *
+   * A missing `_id` is refused for the same reason: every row without one keys
+   * on `undefined`, so a whole collection collapses onto the last row of it.
+   * The type says `_id` is required, and JavaScript callers do not read types.
+   */
+  private admit(row: Row): void {
+    if (typeof row._id !== "number" || !Number.isFinite(row._id)) {
+      throw new Error(
+        `rowstore: every row needs a numeric _id, got ${JSON.stringify(row._id)}. ` +
+          "Rows without one all key on the same slot and overwrite each other.",
+      );
+    }
+    if (this.rows.has(row._id)) throw new Error(`rowstore: duplicate _id ${row._id}`);
+    this.rows.set(row._id, row);
   }
 
   get size(): number {
@@ -333,8 +358,7 @@ export class RowStore {
   }
 
   insert(row: Row): void {
-    if (this.rows.has(row._id)) throw new Error(`rowstore: duplicate _id ${row._id}`);
-    this.rows.set(row._id, row);
+    this.admit(row);
     for (const [field, f] of this.indexes) {
       if (f.hash) f.hash.add(this.read(row, field), row._id);
       if (f.sorted) f.sorted.add(this.read(row, field), row._id);
