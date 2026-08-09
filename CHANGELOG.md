@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+
+Documentation. Adds Install, an API section covering the seven public entry points and the shape of `stats()`, and a `When not to use this` naming a plain `Map`, `sift`, `mingo` and `lokijs`. Explains why `find` answers with ids rather than records.
+
 ## 0.1.5
 
 **A row could be lost on the way in, and the wrong answer came out. Upgrade.**
