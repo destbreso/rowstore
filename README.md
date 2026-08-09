@@ -29,6 +29,14 @@ store.find({ status: "open", score: { gte: 100 } });  // and keeps going
 store.stats();   // what it built, when, what it cost, what it saved
 ```
 
+## Install
+
+```
+npm install rowstore
+```
+
+Zero runtime dependencies. TypeScript declarations, ESM and CommonJS, Node 18 and up.
+
 ## How well does it guess
 
 Measured by [`rowtoll`](https://github.com/destbreso/rowtoll), which counts field
@@ -219,6 +227,65 @@ decision and nothing beyond it: a collection that also had to be a query engine
 would be competing with `sift` and `mingo`, which are 6.5M and 250k weekly
 downloads of solved problem. An unknown operator throws with its own name in the
 message rather than being quietly ignored.
+
+## API
+
+```ts
+new RowStore(rows?, options?)
+```
+
+`rows` is any iterable of records, each with a numeric `_id`. `options` takes
+`buildAfter` (sightings of a predicate shape before its index is built, default
+2) and `scanOnly` (never build anything, so the store is a scan and a bookkeeper).
+
+| method | returns | |
+|---|---|---|
+| `find(query)` | `number[]` | the ids that match, planned |
+| `findOne(query)` | `Row \| undefined` | the same plan, stopped at the first hit |
+| `get(id)` | `Row \| undefined` | by id, no plan involved |
+| `insert(row)` | `void` | throws on a missing or duplicate `_id` |
+| `update(id, patch)` | `boolean` | false if there is no such row |
+| `remove(id)` | `boolean` | false if there is no such row |
+| `size` | `number` | rows held |
+| `stats()` | `Stats` | see below |
+
+`find` answers with ids rather than records so that a caller who wants a count,
+a membership test or a join key does not pay for materializing rows it will
+throw away. Use `get` for the ones you want.
+
+`stats()` returns `{ rows, queries, reads, indexes, shapes, refused }`. `reads`
+is the store's own count of field reads, which is a self-report and not
+evidence: the number this package is measured on comes from
+[`rowtoll`](https://www.npmjs.com/package/rowtoll), from outside. `refused`
+lists the fields an index was declined on with the measured reason, which is
+usually the more interesting half.
+
+`HashIndex` and `SortedIndex` are exported for anyone who wants the access paths
+without the planner.
+
+## When not to use this
+
+**Your query shapes are known and stable.** Then you know your indexes better
+than any counter does, and a plain `Map` keyed the way you always query is
+faster than this and simpler than this. The whole argument here is about not
+knowing, so if you know, this is machinery you are paying for and not using.
+
+**You need a query language.** No `or`, no regular expressions, no sort, no
+projection, no aggregation, no joins. Equality, membership and ranges under an
+implicit and, and nothing else, because that is the surface where choosing an
+access path is a real decision. [`sift`](https://www.npmjs.com/package/sift) and
+[`mingo`](https://www.npmjs.com/package/mingo) implement the MongoDB query
+language over plain arrays and are the right answer when you want one.
+
+**You want a database.** [`lokijs`](https://www.npmjs.com/package/lokijs) gives
+you persistence, collections, transactions, events and a much larger surface.
+This is a collection that indexes itself; it does not want to be your storage
+layer.
+
+**You need to know what memory it costs.** It cannot tell you. The number it
+optimizes is field reads, and an index that halves your reads and doubles your
+resident size looks free here. That is the honest boundary of the axis, stated
+in full under [what the toll cannot see](https://github.com/destbreso/rowtoll#what-the-toll-cannot-see).
 
 ## License
 
