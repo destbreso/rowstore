@@ -51,7 +51,9 @@
     "smoke": "node scripts/smoke-published.mjs",
     "bench": "vite-node bench/arena.ts",
     "figures": "node scripts/figures.mjs",
-    "prepack": "npm run build && node scripts/verify-pack.mjs"
+    "prepack": "npm run build && node scripts/verify-pack.mjs",
+    "verify:lockfile": "node scripts/verify-lockfile.mjs",
+    "prepublishOnly": "npm run typecheck && npm test && npm run verify:lockfile"
   },
   "keywords": [
     "collection",
